@@ -9,11 +9,12 @@ import WaterScreen from '@/components/WaterScreen';
 import GardenScreen from '@/components/GardenScreen';
 import GrowthScreen from '@/components/GrowthScreen';
 import PassiveGrowthModal from '@/components/PassiveGrowthModal';
+import BloomMoment from '@/components/BloomMoment';
 import NamePlantModal from '@/components/NamePlantModal';
 import InstallPrompt from '@/components/InstallPrompt';
 import { GrowthStage } from '@/types/garden';
 
-type Screen = 'loading' | 'welcome' | 'home' | 'watering' | 'growth';
+type Screen = 'loading' | 'welcome' | 'home' | 'watering' | 'moment' | 'growth';
 
 export default function App() {
   const {
@@ -52,10 +53,20 @@ export default function App() {
   const handleWateringComplete = () => {
     if (garden) setPrevStage(garden.stage);
     completeWatering();
-    setScreen('growth');
+    setScreen('moment'); // BloomMoment — 2.7s calm transition
   };
 
   const handleWateringCancel = () => setScreen('home');
+
+  // Called automatically after the BloomMoment resolves
+  const handleMomentComplete = () => {
+    if (prevStage !== null && garden && garden.stage !== prevStage) {
+      setScreen('growth'); // Level-up → celebratory screen
+    } else {
+      setPrevStage(null);
+      setScreen('home');
+    }
+  };
 
   const handleGrowthContinue = () => {
     setPrevStage(null);
@@ -107,6 +118,14 @@ export default function App() {
             key="watering"
             onComplete={handleWateringComplete}
             onCancel={handleWateringCancel}
+          />
+        )}
+
+        {screen === 'moment' && garden && (
+          <BloomMoment
+            key="moment"
+            stage={garden.stage}
+            onComplete={handleMomentComplete}
           />
         )}
 

@@ -17,56 +17,38 @@ function pickCategory(weights: Record<MessageCategory, number>): MessageCategory
   return 'garden';
 }
 
-// ── Ambient time check ───────────────────────────────────────────────────────
-
-function isAmbientActive(timeRange?: [number, number]): boolean {
-  if (!timeRange) return true;
-  const h = new Date().getHours();
-  const [start, end] = timeRange;
-  if (start < end) return h >= start && h < end;
-  return h >= start || h < end; // Wraps midnight
-}
-
 // ── Core selection logic ─────────────────────────────────────────────────────
 
 function selectBloomMessage(
   garden: GardenState,
-  hoursAway: number,
   state: MessageStorageState
 ): BloomMessage | null {
-  const isReturn = hoursAway >= 3;
-  const sessionsSinceLast = garden.wateringCount - state.lastShownAt;
+  // 20% of all sessions show an ambient message — rarity makes it feel special
+  if (Math.random() > 0.20) return null;
 
-  // Cooldown: require at least 2 waterings between messages (skip for returns)
-  if (!isReturn && sessionsSinceLast < 2) return null;
-
-  // Probability gate
-  const probability = isReturn ? 0.75 : 0.20;
-  if (Math.random() > probability) return null;
-
-  // Category weights
-  const weights: Record<MessageCategory, number> = isReturn
-    ? { garden: 0.85, pause: 0.10, personal: 0.00, ambient: 0.05 }
-    : { garden: 0.55, pause: 0.30, personal: 0.10, ambient: 0.05 };
+  // Category weights: 60 garden / 30 pause / 10 personal (per spec)
+  const weights: Record<MessageCategory, number> = {
+    garden:   0.60,
+    pause:    0.30,
+    personal: 0.10,
+    ambient:  0.00, // ambient messages kept in data, not selected via weights
+  };
 
   // Never show personal twice in a row
   if (state.lastWasPersonal) {
     weights.personal = 0;
-    weights.garden += 0.07;
-    weights.pause  += 0.03;
+    weights.garden  += 0.07;
+    weights.pause   += 0.03;
   }
 
   const category = pickCategory(weights);
 
-  // Build candidate pool — exclude recently shown IDs
-  let pool = MESSAGES.filter(m => {
-    if (m.category !== category) return false;
-    if (state.recentIds.includes(m.id)) return false;
-    if (m.category === 'ambient') return isAmbientActive(m.timeRange);
-    return true;
-  });
+  // Build pool — exclude the last 10 shown IDs to avoid repetition
+  let pool = MESSAGES.filter(
+    m => m.category === category && !state.recentIds.includes(m.id)
+  );
 
-  // Fallback: if the chosen category is exhausted, try garden
+  // Fallback: category pool exhausted → try garden
   if (pool.length === 0 && category !== 'garden') {
     pool = MESSAGES.filter(
       m => m.category === 'garden' && !state.recentIds.slice(-5).includes(m.id)
@@ -82,20 +64,18 @@ function selectBloomMessage(
 
 /**
  * Returns a soft ambient message for the current garden session, or null.
- * Computed once per GardenScreen mount (= once per visit after watering or app open).
- * Persists selection history in localStorage to avoid repetition.
+ * Computed once per GardenScreen mount.
+ * History persisted in localStorage (bloom_msgs_v1) to avoid repetition.
  */
 export function useBloomMessage(
   garden: GardenState | null,
-  hoursAway: number
+  _hoursAway: number  // kept for API compatibility; no longer changes probability
 ): string | null {
-  // Computed once — stored in ref so it doesn't change on re-renders
   const resolved = useRef<string | null>(undefined as unknown as string | null);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Run only once per mount
-    if (resolved.current !== undefined) return;
+    if (resolved.current !== undefined) return; // run only once per mount
 
     if (!garden) {
       resolved.current = null;
@@ -103,7 +83,7 @@ export function useBloomMessage(
     }
 
     const state = loadMessageState();
-    const selected = selectBloomMessage(garden, hoursAway, state);
+    const selected = selectBloomMessage(garden, state);
     resolved.current = selected?.text ?? null;
 
     if (selected) {
