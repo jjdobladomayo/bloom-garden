@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Reset & base ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background-color: #fdf9f5;
+  color: #2d2d2d;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app-root {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent scrollbar flash */
+::-webkit-scrollbar { display: none; }
+
+/* ── Utility ──────────────────────────────────────────────── */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── PWA safe areas ───────────────────────────────────────── */
+.safe-top    { padding-top: env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* ── Custom animations ─────────────────────────────────────── */
+@keyframes rain-fall {
+  0%   { transform: translateY(-30px) rotate(12deg); opacity: 0; }
+  8%   { opacity: 0.75; }
+  92%  { opacity: 0.75; }
+  100% { transform: translateY(110vh)  rotate(12deg); opacity: 0; }
+}
+
+.raindrop {
+  animation: rain-fall linear infinite;
+}
+
+@keyframes particle-rise {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0.9; }
+  100% { transform: translate(var(--tx, 0px), -70px) scale(0); opacity: 0; }
+}
+
+.particle {
+  animation: particle-rise 1.4s ease-out forwards;
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+.pulse-ring {
+  animation: pulse-ring 1.6s ease-out infinite;
+}
+
+/* Gentle float for the plant */
+@keyframes plant-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-5px); }
+}
+
+.plant-float {
+  animation: plant-float 5s ease-in-out infinite;
+}
+
+/* CTA button pulse */
+@keyframes cta-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 184, 122, 0.35); }
+  50%       { box-shadow: 0 0 0 12px rgba(124, 184, 122, 0); }
+}
+
+.cta-pulse {
+  animation: cta-pulse 2.5s ease-in-out infinite;
+}

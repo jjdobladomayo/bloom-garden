@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="114" fill="#fdf9f5"/>
+  <!-- Soil -->
+  <ellipse cx="256" cy="388" rx="110" ry="26" fill="#c4956a" opacity="0.25"/>
+  <ellipse cx="256" cy="384" rx="52" ry="14" fill="#c4956a" opacity="0.4"/>
+  <!-- Trunk -->
+  <path d="M256 378 Q250 344 252 306 Q254 272 256 240" stroke="#8b5e3c" stroke-width="22" stroke-linecap="round" fill="none"/>
+  <!-- Crown layers - bottom to top -->
+  <ellipse cx="256" cy="230" rx="120" ry="52" fill="#4a8c48"/>
+  <ellipse cx="256" cy="208" rx="108" ry="60" fill="#5a9c58"/>
+  <ellipse cx="256" cy="188" rx="92" ry="60" fill="#7cb87a"/>
+  <ellipse cx="256" cy="166" rx="74" ry="52" fill="#8dc88b"/>
+  <ellipse cx="256" cy="148" rx="55" ry="44" fill="#7cb87a"/>
+  <!-- Highlight -->
+  <ellipse cx="240" cy="138" rx="30" ry="22" fill="#a8d8a5" opacity="0.5"/>
+  <!-- Flowers -->
+  <circle cx="224" cy="148" r="10" fill="#fde8b0"/>
+  <circle cx="224" cy="148" r="6" fill="#f5a623"/>
+  <circle cx="288" cy="156" r="9" fill="#fde8b0"/>
+  <circle cx="288" cy="156" r="5" fill="#f5a623"/>
+  <circle cx="256" cy="138" r="11" fill="#fde8b0"/>
+  <circle cx="256" cy="138" r="7" fill="#f8b830"/>
+</svg>
