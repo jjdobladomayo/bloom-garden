@@ -4,11 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GardenState, STAGE_LABELS, PassiveElement } from '@/types/garden';
 import PlantDisplay from './PlantDisplay';
 import { formatLastWatered, wateringsUntilNextStage, getStageProgress } from '@/utils/garden';
+import { useBloomMessage } from '@/hooks/useBloomMessage';
 
 interface Props {
   garden: GardenState;
   onWater: () => void;
-  onOpenRename: () => void;    // ← simply opens the modal (state lives in page.tsx)
+  onOpenRename: () => void;
+  hoursAway: number;
 }
 
 const PASSIVE_EMOJIS: Record<string, string> = {
@@ -21,12 +23,13 @@ const PASSIVE_EMOJIS: Record<string, string> = {
   dewdrop: '💧',
 };
 
-export default function GardenScreen({ garden, onWater, onOpenRename }: Props) {
+export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway }: Props) {
   const lastText = formatLastWatered(garden.lastWatered);
   const toNext = wateringsUntilNextStage(garden);
   const stageProgress = getStageProgress(garden);
   const isMaxStage = toNext === null;
   const isDefaultName = garden.plantName === 'Mi planta';
+  const bloomMessage = useBloomMessage(garden, hoursAway);
 
   return (
     <motion.div
@@ -146,6 +149,21 @@ export default function GardenScreen({ garden, onWater, onOpenRename }: Props) {
             </p>
           )}
         </motion.div>
+
+        {/* ── Bloom message ────────────────────────────────── */}
+        <AnimatePresence>
+          {bloomMessage && (
+            <motion.p
+              key={bloomMessage}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1.4, delay: 1.0, ease: 'easeInOut' }}
+              className="text-xs font-light tracking-wide text-gray-400 text-center px-8 mt-1"
+            >
+              {bloomMessage}
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── Bottom CTA ──────────────────────────────────── */}

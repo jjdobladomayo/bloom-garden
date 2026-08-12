@@ -96,6 +96,7 @@ export default function App() {
           <GardenScreen
             key="home"
             garden={garden}
+            hoursAway={hoursAway}
             onWater={handleWater}
             onOpenRename={() => setShowRename(true)}
           />
