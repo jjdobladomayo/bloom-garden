@@ -4,9 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GardenState, STAGE_LABELS, PassiveElement } from '@/types/garden';
 import PlantDisplay from './PlantDisplay';
 import StarField from './StarField';
+import SeasonalElements from './SeasonalElements';
 import { formatLastWatered, wateringsUntilNextStage, getStageProgress } from '@/utils/garden';
 import { useBloomMessage } from '@/hooks/useBloomMessage';
 import { useTimeOfDay, TimeOfDay } from '@/hooks/useTimeOfDay';
+import { useSeasonOfYear } from '@/hooks/useSeasonOfYear';
 
 // ── Time-of-day palette ────────────────────────────────────────────────────
 
@@ -99,6 +101,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
   const isDefaultName = garden.plantName === 'Mi planta';
   const bloomMessage  = useBloomMessage(garden, hoursAway);
   const timeOfDay     = useTimeOfDay();
+  const season        = useSeasonOfYear();
   const p             = PALETTES[timeOfDay];
   const dark          = p.isDark;
 
@@ -144,6 +147,9 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Seasonal particles ─────────────────────────────── */}
+      <SeasonalElements season={season} timeOfDay={timeOfDay} />
 
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-6 pt-14 pb-2" style={{ position: 'relative', zIndex: 2 }}>
