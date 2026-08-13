@@ -8,7 +8,7 @@ import {
   STAGE_THRESHOLDS,
 } from '@/types/garden';
 
-export function createInitialGarden(): GardenState {
+export function createInitialGarden(name = 'Mi planta'): GardenState {
   return {
     stage: 'seed',
     wateringCount: 0,
@@ -16,7 +16,7 @@ export function createInitialGarden(): GardenState {
     streakDays: 0,
     lastOpenedAt: Date.now(),
     passiveElements: [],
-    plantName: 'Mi planta',
+    plantName: name.trim() || 'Mi planta',
     createdAt: Date.now(),
     newPassiveElements: [],
   };

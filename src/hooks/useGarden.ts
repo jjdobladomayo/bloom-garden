@@ -23,8 +23,8 @@ export function useGarden() {
     setIsLoading(false);
   }, []);
 
-  const initGarden = useCallback(() => {
-    const initial = createInitialGarden();
+  const initGarden = useCallback((name?: string) => {
+    const initial = createInitialGarden(name);
     setGarden(initial);
     saveGarden(initial);
   }, []);

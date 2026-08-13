@@ -43,8 +43,8 @@ export default function App() {
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
-  const handleStart = () => {
-    initGarden();
+  const handleStart = (name: string) => {
+    initGarden(name || undefined);
     setScreen('home');
   };
 
