@@ -17,38 +17,53 @@ function pickCategory(weights: Record<MessageCategory, number>): MessageCategory
   return 'garden';
 }
 
+// ── Ambient time check ───────────────────────────────────────────────────────
+
+function isAmbientActive(timeRange?: [number, number]): boolean {
+  if (!timeRange) return true;
+  const h = new Date().getHours();
+  const [start, end] = timeRange;
+  if (start < end) return h >= start && h < end;
+  return h >= start || h < end; // wraps midnight
+}
+
 // ── Core selection logic ─────────────────────────────────────────────────────
 
 function selectBloomMessage(
   garden: GardenState,
   state: MessageStorageState
 ): BloomMessage | null {
-  // 20% of all sessions show an ambient message — rarity makes it feel special
-  if (Math.random() > 0.20) return null;
+  const isMaxStage = garden.stage === 'tree';
 
-  // Category weights: 60 garden / 30 pause / 10 personal (per spec)
-  const weights: Record<MessageCategory, number> = {
-    garden:   0.60,
-    pause:    0.30,
-    personal: 0.10,
-    ambient:  0.00, // ambient messages kept in data, not selected via weights
-  };
+  // Probability gate:
+  //   50% when the tree is complete — the message becomes the daily discovery
+  //   20% otherwise — rare enough to feel special
+  if (Math.random() > (isMaxStage ? 0.50 : 0.20)) return null;
+
+  // Category weights
+  const weights: Record<MessageCategory, number> = isMaxStage
+    ? { garden: 0.30, pause: 0.15, personal: 0.05, ambient: 0.15, tree: 0.35 }
+    : { garden: 0.55, pause: 0.30, personal: 0.10, ambient: 0.05, tree: 0.00 };
 
   // Never show personal twice in a row
   if (state.lastWasPersonal) {
     weights.personal = 0;
-    weights.garden  += 0.07;
-    weights.pause   += 0.03;
+    // Redistribute proportionally to garden + tree (or pause for non-max)
+    if (isMaxStage) weights.tree += 0.05;
+    else            weights.garden += 0.05;
   }
 
   const category = pickCategory(weights);
 
-  // Build pool — exclude the last 10 shown IDs to avoid repetition
-  let pool = MESSAGES.filter(
-    m => m.category === category && !state.recentIds.includes(m.id)
-  );
+  // Build candidate pool — exclude last 10 shown + time-filter ambient
+  let pool = MESSAGES.filter(m => {
+    if (m.category !== category) return false;
+    if (state.recentIds.includes(m.id)) return false;
+    if (m.category === 'ambient') return isAmbientActive(m.timeRange);
+    return true;
+  });
 
-  // Fallback: category pool exhausted → try garden
+  // Fallback: if the chosen category pool is empty → try garden
   if (pool.length === 0 && category !== 'garden') {
     pool = MESSAGES.filter(
       m => m.category === 'garden' && !state.recentIds.slice(-5).includes(m.id)
@@ -56,7 +71,6 @@ function selectBloomMessage(
   }
 
   if (pool.length === 0) return null;
-
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -65,11 +79,12 @@ function selectBloomMessage(
 /**
  * Returns a soft ambient message for the current garden session, or null.
  * Computed once per GardenScreen mount.
+ * Frequency: 50% at max stage (tree), 20% otherwise.
  * History persisted in localStorage (bloom_msgs_v1) to avoid repetition.
  */
 export function useBloomMessage(
   garden: GardenState | null,
-  _hoursAway: number  // kept for API compatibility; no longer changes probability
+  _hoursAway: number
 ): string | null {
   const resolved = useRef<string | null>(undefined as unknown as string | null);
   const [message, setMessage] = useState<string | null>(null);
@@ -86,9 +101,7 @@ export function useBloomMessage(
     const selected = selectBloomMessage(garden, state);
     resolved.current = selected?.text ?? null;
 
-    if (selected) {
-      saveMessageState(selected, garden.wateringCount);
-    }
+    if (selected) saveMessageState(selected, garden.wateringCount);
 
     setMessage(resolved.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps

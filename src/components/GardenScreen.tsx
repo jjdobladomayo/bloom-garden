@@ -3,15 +3,76 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { GardenState, STAGE_LABELS, PassiveElement } from '@/types/garden';
 import PlantDisplay from './PlantDisplay';
+import StarField from './StarField';
 import { formatLastWatered, wateringsUntilNextStage, getStageProgress } from '@/utils/garden';
 import { useBloomMessage } from '@/hooks/useBloomMessage';
+import { useTimeOfDay, TimeOfDay } from '@/hooks/useTimeOfDay';
 
-interface Props {
-  garden: GardenState;
-  onWater: () => void;
-  onOpenRename: () => void;
-  hoursAway: number;
+// ── Time-of-day palette ────────────────────────────────────────────────────
+
+interface Palette {
+  bg: string;
+  glowColor: string;
+  isDark: boolean;
+  progressBg: string;
+  progressFill: string;
+  btnBg: string;
+  separatorAlpha: number; // 0–1
+  plantGlow: string | null;
 }
+
+const PALETTES: Record<TimeOfDay, Palette> = {
+  dawn: {
+    bg: '#f5eef8',
+    glowColor: 'rgba(255,175,200,0.40)',
+    isDark: false,
+    progressBg: '#e8dced',
+    progressFill: '#a07ab8',
+    btnBg: '#7cb87a',
+    separatorAlpha: 0.18,
+    plantGlow: null,
+  },
+  morning: {
+    bg: '#eff9f4',
+    glowColor: 'rgba(190,240,208,0.65)',
+    isDark: false,
+    progressBg: '#cce8d8',
+    progressFill: '#5aa870',
+    btnBg: '#7cb87a',
+    separatorAlpha: 0.18,
+    plantGlow: null,
+  },
+  afternoon: {
+    bg: '#fdf9f5',
+    glowColor: 'rgba(232,245,233,0.80)',
+    isDark: false,
+    progressBg: '#e0d5c5',
+    progressFill: '#7cb87a',
+    btnBg: '#7cb87a',
+    separatorAlpha: 0.20,
+    plantGlow: null,
+  },
+  evening: {
+    bg: '#fef3e6',
+    glowColor: 'rgba(255,192,105,0.45)',
+    isDark: false,
+    progressBg: '#e8d4b4',
+    progressFill: '#c4956a',
+    btnBg: '#c4956a',
+    separatorAlpha: 0.22,
+    plantGlow: null,
+  },
+  night: {
+    bg: '#141e2e',
+    glowColor: 'rgba(38,78,128,0.35)',
+    isDark: true,
+    progressBg: '#1e3048',
+    progressFill: '#4a9890',
+    btnBg: '#2a6858',
+    separatorAlpha: 0.07,
+    plantGlow: '0 0 28px rgba(100,200,160,0.20)',
+  },
+};
 
 const PASSIVE_EMOJIS: Record<string, string> = {
   leaf: '🍃',
@@ -23,33 +84,79 @@ const PASSIVE_EMOJIS: Record<string, string> = {
   dewdrop: '💧',
 };
 
+interface Props {
+  garden: GardenState;
+  onWater: () => void;
+  onOpenRename: () => void;
+  hoursAway: number;
+}
+
 export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway }: Props) {
-  const lastText = formatLastWatered(garden.lastWatered);
-  const toNext = wateringsUntilNextStage(garden);
+  const lastText     = formatLastWatered(garden.lastWatered);
+  const toNext       = wateringsUntilNextStage(garden);
   const stageProgress = getStageProgress(garden);
-  const isMaxStage = toNext === null;
+  const isMaxStage   = toNext === null;
   const isDefaultName = garden.plantName === 'Mi planta';
-  const bloomMessage = useBloomMessage(garden, hoursAway);
+  const bloomMessage  = useBloomMessage(garden, hoursAway);
+  const timeOfDay     = useTimeOfDay();
+  const p             = PALETTES[timeOfDay];
+  const dark          = p.isDark;
+
+  // Semantic color shortcuts — avoids repetitive inline conditionals
+  const c = {
+    brand:  dark ? '#c8d8e8' : '#6b7280',
+    name:   dark ? '#a8bcc8' : '#6b7280',
+    label:  dark ? '#8898a8' : '#9ca3af',
+    stat:   dark ? '#8898a8' : '#9ca3af',
+    muted:  dark ? '#506070' : '#d1d5db',
+    green:  dark ? '#4a9890' : '#7cb87a',
+    msg:    dark ? '#607888' : '#9ca3af',
+  };
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={{ opacity: 0, backgroundColor: p.bg }}
+      animate={{ opacity: 1, backgroundColor: p.bg }}
       exit={{ opacity: 0 }}
-      className="flex flex-col min-h-screen bg-[#fdf9f5] safe-top safe-bottom"
+      transition={{
+        opacity: { duration: 0.4 },
+        backgroundColor: { duration: 180, ease: 'linear' }, // gentle 3-min shift
+      }}
+      className="flex flex-col min-h-screen safe-top safe-bottom relative overflow-hidden"
     >
+      {/* ── Night sky ──────────────────────────────────────── */}
+      <AnimatePresence>
+        {timeOfDay === 'night' && <StarField key="stars" />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {timeOfDay === 'night' && (
+          <motion.div
+            key="moon"
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 0.70, x: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 2.5 }}
+            className="absolute top-20 right-8 text-2xl pointer-events-none select-none"
+            style={{ zIndex: 1 }}
+          >
+            🌙
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Header ─────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 pt-14 pb-2">
+      <div className="flex items-center justify-between px-6 pt-14 pb-2" style={{ position: 'relative', zIndex: 2 }}>
         <motion.span
           initial={{ opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-xl font-thin tracking-[0.2em] text-gray-600"
+          className="text-xl font-thin tracking-[0.2em]"
+          style={{ color: c.brand }}
         >
           bloom
         </motion.span>
 
-        {/* Plant name — tappable, opens rename modal via page.tsx */}
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -58,16 +165,17 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           className="flex items-center gap-1.5 active:scale-95 transition-transform"
         >
           <span
-            className={`text-sm tracking-wide transition-colors ${
-              isDefaultName
-                ? 'text-[#7cb87a] underline underline-offset-2 decoration-dotted'
-                : 'text-gray-500'
-            }`}
+            className="text-sm tracking-wide transition-colors"
+            style={{
+              color: isDefaultName ? '#7cb87a' : c.name,
+              textDecoration: isDefaultName ? 'underline dotted' : 'none',
+              textUnderlineOffset: '2px',
+            }}
           >
             {garden.plantName}
           </span>
           <motion.span
-            className="text-gray-300 text-xs leading-none"
+            style={{ color: dark ? '#3a5060' : '#d1d5db', fontSize: '0.75rem', lineHeight: 1 }}
             animate={isDefaultName ? { opacity: [0.4, 1, 0.4] } : { opacity: 0.5 }}
             transition={isDefaultName ? { repeat: Infinity, duration: 2 } : {}}
           >
@@ -77,13 +185,11 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
       </div>
 
       {/* ── Garden scene ──────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-2 relative">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-2 relative" style={{ zIndex: 2 }}>
+        {/* Ambient glow at top */}
         <div
           className="absolute inset-x-4 top-0 bottom-1/4 rounded-3xl pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse at top, rgba(232,245,233,0.8) 0%, transparent 70%)',
-          }}
+          style={{ background: `radial-gradient(ellipse at top, ${p.glowColor} 0%, transparent 70%)` }}
         />
 
         <div className="relative flex items-end justify-center" style={{ minHeight: 260 }}>
@@ -93,12 +199,22 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
             ))}
           </AnimatePresence>
 
-          <div className="plant-float z-10">
+          {/* Plant with optional night glow */}
+          <div
+            className="plant-float z-10"
+            style={p.plantGlow ? { filter: `drop-shadow(${p.plantGlow})` } : undefined}
+          >
             <PlantDisplay stage={garden.stage} size={220} />
           </div>
         </div>
 
-        <div className="w-full max-w-xs h-px bg-gradient-to-r from-transparent via-[#c4956a] to-transparent opacity-20 mt-1" />
+        {/* Thin separator */}
+        <div
+          className="w-full max-w-xs h-px mt-1"
+          style={{
+            background: `linear-gradient(to right, transparent, rgba(196,149,106,${p.separatorAlpha}), transparent)`,
+          }}
+        />
 
         {/* ── Stage info ─────────────────────────────────── */}
         <motion.div
@@ -107,14 +223,15 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           transition={{ delay: 0.4 }}
           className="mt-6 flex flex-col items-center gap-3 w-full max-w-xs"
         >
-          <div className="text-xs uppercase tracking-widest text-gray-400">
+          <div className="text-xs uppercase tracking-widest" style={{ color: c.label }}>
             {STAGE_LABELS[garden.stage]}
           </div>
 
           {!isMaxStage && (
-            <div className="w-full bg-[#e0d5c5] rounded-full h-1.5 overflow-hidden">
+            <div className="w-full rounded-full h-1.5 overflow-hidden" style={{ backgroundColor: p.progressBg }}>
               <motion.div
-                className="h-full rounded-full bg-[#7cb87a]"
+                className="h-full rounded-full"
+                style={{ backgroundColor: p.progressFill }}
                 initial={{ width: 0 }}
                 animate={{ width: `${stageProgress * 100}%` }}
                 transition={{ duration: 0.8, delay: 0.5, ease: 'easeOut' }}
@@ -124,19 +241,19 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
 
           <div className="flex items-center gap-5">
             {garden.streakDays > 0 && (
-              <div className="flex items-center gap-1 text-xs text-gray-400">
+              <div className="flex items-center gap-1 text-xs" style={{ color: c.stat }}>
                 <span>🔥</span>
                 <span>{garden.streakDays} {garden.streakDays === 1 ? 'día' : 'días'}</span>
               </div>
             )}
             {garden.lastWatered && (
-              <div className="flex items-center gap-1 text-xs text-gray-400">
+              <div className="flex items-center gap-1 text-xs" style={{ color: c.stat }}>
                 <span>💧</span>
                 <span>{lastText}</span>
               </div>
             )}
             {isMaxStage && (
-              <div className="flex items-center gap-1 text-xs text-[#7cb87a]">
+              <div className="flex items-center gap-1 text-xs" style={{ color: c.green }}>
                 <span>✨</span>
                 <span>Árbol completo</span>
               </div>
@@ -144,7 +261,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           </div>
 
           {toNext !== null && toNext <= 3 && toNext > 0 && (
-            <p className="text-xs text-gray-300">
+            <p className="text-xs" style={{ color: c.muted }}>
               {toNext === 1 ? '1 riego más' : `${toNext} riegos más`} para crecer
             </p>
           )}
@@ -158,7 +275,8 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 1.4, delay: 1.0, ease: 'easeInOut' }}
-              className="text-xs font-light tracking-wide text-gray-400 text-center px-8 mt-1"
+              className="text-xs font-light tracking-wide text-center px-8 mt-1"
+              style={{ color: c.msg }}
             >
               {bloomMessage}
             </motion.p>
@@ -167,13 +285,14 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
       </div>
 
       {/* ── Bottom CTA ──────────────────────────────────── */}
-      <div className="px-6 pt-2 pb-10">
+      <div className="px-6 pt-2 pb-10" style={{ position: 'relative', zIndex: 2 }}>
         <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
           onClick={onWater}
-          className="w-full py-5 bg-[#7cb87a] text-white rounded-2xl text-base font-medium tracking-wide cta-pulse no-select active:scale-95 transition-transform"
+          className="w-full py-5 text-white rounded-2xl text-base font-medium tracking-wide cta-pulse no-select active:scale-95 transition-transform"
+          style={{ backgroundColor: p.btnBg }}
         >
           Regar ahora
         </motion.button>
@@ -182,7 +301,8 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
-          className="text-center text-xs text-gray-300 mt-3"
+          className="text-center text-xs mt-3"
+          style={{ color: c.muted }}
         >
           {garden.wateringCount === 0
             ? 'Primera gota de agua'

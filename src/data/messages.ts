@@ -1,4 +1,4 @@
-export type MessageCategory = 'garden' | 'pause' | 'personal' | 'ambient';
+export type MessageCategory = 'garden' | 'pause' | 'personal' | 'ambient' | 'tree';
 
 export interface BloomMessage {
   id: number;
@@ -110,10 +110,39 @@ export const MESSAGES: BloomMessage[] = [
   { id: 94, text: 'Llevas tiempo cuidando esto.',                                category: 'personal' },
   { id: 95, text: 'Me alegra verte de nuevo.',                                   category: 'personal' },
 
-  // ── Categoría D: Ambiental (5 mensajes, filtrados por hora) ──────────────
-  { id: 96,  text: 'Una mañana tranquila en el jardín.',             category: 'ambient', timeRange: [6, 12] },
-  { id: 97,  text: 'Buenas noches. El jardín descansa también.',     category: 'ambient', timeRange: [22, 6] },
-  { id: 98,  text: 'La tarde cae despacio aquí dentro.',             category: 'ambient', timeRange: [17, 21] },
-  { id: 99,  text: 'A esta hora el jardín tiene su propia luz.',     category: 'ambient', timeRange: [0, 24] },
-  { id: 100, text: 'El jardín también conoce los mediodías tranquilos.', category: 'ambient', timeRange: [12, 15] },
+  // ── Categoría D: Ambiental (17 mensajes, filtrados por hora) ────────────
+  { id: 96,  text: 'Una mañana tranquila en el jardín.',                  category: 'ambient', timeRange: [6, 12] },
+  { id: 97,  text: 'Buenas noches. El jardín descansa también.',          category: 'ambient', timeRange: [22, 6] },
+  { id: 98,  text: 'La tarde cae despacio aquí dentro.',                  category: 'ambient', timeRange: [17, 21] },
+  { id: 99,  text: 'A esta hora el jardín tiene su propia luz.',          category: 'ambient', timeRange: [0, 24] },
+  { id: 100, text: 'El jardín también conoce los mediodías tranquilos.',  category: 'ambient', timeRange: [12, 15] },
+  { id: 116, text: 'El rocío de la mañana.',                             category: 'ambient', timeRange: [5, 9]  },
+  { id: 117, text: 'Las aves ya están despiertas.',                      category: 'ambient', timeRange: [6, 10] },
+  { id: 118, text: 'Una mañana más en el jardín.',                       category: 'ambient', timeRange: [7, 12] },
+  { id: 119, text: 'La tarde tiene su propia calma.',                    category: 'ambient', timeRange: [14, 18] },
+  { id: 120, text: 'El atardecer llega despacio.',                       category: 'ambient', timeRange: [18, 21] },
+  { id: 121, text: 'Los últimos rayos del día.',                         category: 'ambient', timeRange: [19, 22] },
+  { id: 122, text: 'El jardín entra en la noche.',                       category: 'ambient', timeRange: [21, 24] },
+  { id: 123, text: 'Solo las estrellas y las raíces.',                   category: 'ambient', timeRange: [22, 5]  },
+  { id: 124, text: 'La noche es parte del jardín también.',              category: 'ambient', timeRange: [22, 4]  },
+  { id: 125, text: 'Antes del amanecer, silencio.',                      category: 'ambient', timeRange: [3, 6]   },
+  { id: 126, text: 'Un mediodía en calma.',                              category: 'ambient', timeRange: [12, 14] },
+  { id: 127, text: 'Una tarde tranquila.',                               category: 'ambient', timeRange: [15, 19] },
+
+  // ── Categoría E: Voz del árbol (15 mensajes, solo cuando stage === 'tree') ──
+  { id: 101, text: 'Mis raíces llegan ya muy lejos.',                    category: 'tree' },
+  { id: 102, text: 'He crecido contigo.',                                category: 'tree' },
+  { id: 103, text: 'Este jardín tiene historia.',                        category: 'tree' },
+  { id: 104, text: 'Cada gota que me diste está aquí.',                  category: 'tree' },
+  { id: 105, text: 'Llevo tiempo mirando este mismo cielo.',             category: 'tree' },
+  { id: 106, text: 'Las raíces más profundas no se ven.',                category: 'tree' },
+  { id: 107, text: 'No recuerdo cómo era ser una semilla.',              category: 'tree' },
+  { id: 108, text: 'Este jardín es nuestro.',                            category: 'tree' },
+  { id: 109, text: 'Soy el árbol que elegiste cuidar.',                  category: 'tree' },
+  { id: 110, text: 'Seguiré aquí.',                                      category: 'tree' },
+  { id: 111, text: 'Gracias por el tiempo que me has dado.',             category: 'tree' },
+  { id: 112, text: 'Hay algo que solo los árboles viejos saben.',        category: 'tree' },
+  { id: 113, text: 'He conocido muchas mañanas aquí.',                   category: 'tree' },
+  { id: 114, text: 'El jardín ha cambiado desde el principio.',          category: 'tree' },
+  { id: 115, text: 'Esto que hemos construido es real.',                 category: 'tree' },
 ];
