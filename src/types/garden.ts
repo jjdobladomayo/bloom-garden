@@ -16,6 +16,13 @@ export interface PassiveElement {
   position: { x: number; y: number };
 }
 
+export interface SecondaryPlant {
+  /** Waterings applied to this seedling since it appeared */
+  wateringCount: number;
+  /** Timestamp when the seedling first emerged */
+  appearedAt: number;
+}
+
 export interface GardenState {
   stage: GrowthStage;
   wateringCount: number;
@@ -26,6 +33,8 @@ export interface GardenState {
   plantName: string;
   createdAt: number;
   newPassiveElements: PassiveElement[];
+  /** A new seedling that appears once the main plant becomes a tree */
+  secondaryPlant?: SecondaryPlant;
 }
 
 export const STAGE_LABELS: Record<GrowthStage, string> = {

@@ -3,6 +3,7 @@ import {
   GrowthStage,
   PassiveElement,
   PassiveElementType,
+  SecondaryPlant,
   STAGE_ORDER,
   STAGE_THRESHOLDS,
 } from '@/types/garden';
@@ -97,6 +98,21 @@ export function processWatering(state: GardenState): GardenState {
     newStreak = 1;
   }
 
+  // ── Secondary seedling ─────────────────────────────────────────────────────
+  // When the main plant reaches (or is already at) tree stage, a new seed
+  // quietly appears and grows with each subsequent watering.
+  let secondaryPlant: SecondaryPlant | undefined = state.secondaryPlant;
+
+  if (newStage === 'tree') {
+    if (!secondaryPlant) {
+      // Tree just completed (or first watering on an existing tree) — seed emerges
+      secondaryPlant = { wateringCount: 0, appearedAt: now };
+    } else {
+      // Grow the seedling one step (capped — it can also become a tree eventually)
+      secondaryPlant = { ...secondaryPlant, wateringCount: secondaryPlant.wateringCount + 1 };
+    }
+  }
+
   return {
     ...state,
     wateringCount: newCount,
@@ -104,6 +120,7 @@ export function processWatering(state: GardenState): GardenState {
     lastWatered: now,
     streakDays: newStreak,
     newPassiveElements: [],
+    secondaryPlant,
   };
 }
 

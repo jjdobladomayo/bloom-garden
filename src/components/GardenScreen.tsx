@@ -5,7 +5,7 @@ import { GardenState, STAGE_LABELS, PassiveElement } from '@/types/garden';
 import PlantDisplay from './PlantDisplay';
 import StarField from './StarField';
 import SeasonalElements from './SeasonalElements';
-import { formatLastWatered, wateringsUntilNextStage, getStageProgress } from '@/utils/garden';
+import { formatLastWatered, wateringsUntilNextStage, getStageProgress, getStageFromCount } from '@/utils/garden';
 import { useBloomMessage } from '@/hooks/useBloomMessage';
 import { useTimeOfDay, TimeOfDay } from '@/hooks/useTimeOfDay';
 import { useSeasonOfYear } from '@/hooks/useSeasonOfYear';
@@ -205,7 +205,27 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
             ))}
           </AnimatePresence>
 
-          {/* Plant with optional night glow */}
+          {/* Secondary seedling — appears once the main plant becomes a tree */}
+          <AnimatePresence>
+            {garden.secondaryPlant && (
+              <motion.div
+                key="secondary-plant"
+                initial={{ opacity: 0, scale: 0.3, y: 12 }}
+                animate={{ opacity: 0.92, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.3 }}
+                transition={{ duration: 2.8, ease: 'easeOut' }}
+                className="absolute"
+                style={{ right: '7%', bottom: 0, zIndex: 8 }}
+              >
+                <PlantDisplay
+                  stage={getStageFromCount(garden.secondaryPlant.wateringCount)}
+                  size={72}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Main plant with optional night glow */}
           <div
             className="plant-float z-10"
             style={p.plantGlow ? { filter: `drop-shadow(${p.plantGlow})` } : undefined}
