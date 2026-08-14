@@ -1,5 +1,5 @@
-// bloom-v2 — network-first for navigation, cache-first for hashed static assets
-const CACHE_NAME = 'bloom-v2';
+// bloom-v3 — network-first for navigation, cache-first for hashed static assets
+const CACHE_NAME = 'bloom-v3';
 const PRECACHE = ['/manifest.json', '/icons/icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -30,7 +30,9 @@ self.addEventListener('fetch', (event) => {
         if (cached) return cached;
         return fetch(event.request).then((response) => {
           if (!response || response.status !== 200 || response.type !== 'basic') return response;
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
+          // Clone synchronously before returning — body can only be read once
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           return response;
         });
       })
@@ -38,13 +40,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation requests and everything else — network-first, cache as fallback
-  // This guarantees users always load the latest deployed version when online.
+  // Navigation and everything else — network-first, cache as offline fallback
   event.respondWith(
     fetch(event.request)
       .then((response) => {
         if (response && response.status === 200 && response.type === 'basic') {
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
+          // Clone synchronously before entering any async boundary
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
       })
