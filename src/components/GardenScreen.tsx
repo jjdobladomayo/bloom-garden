@@ -198,7 +198,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           style={{ background: `radial-gradient(ellipse at top, ${p.glowColor} 0%, transparent 70%)` }}
         />
 
-        <div className="relative flex items-end justify-center" style={{ minHeight: 260 }}>
+        <div className="relative flex items-end justify-center w-full" style={{ minHeight: 260 }}>
           <AnimatePresence>
             {garden.passiveElements.slice(-5).map((el) => (
               <PassiveElementDot key={el.id} element={el} />
