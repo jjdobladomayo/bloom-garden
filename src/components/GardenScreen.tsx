@@ -5,7 +5,7 @@ import { GardenState, STAGE_LABELS, PassiveElement } from '@/types/garden';
 import PlantDisplay from './PlantDisplay';
 import StarField from './StarField';
 import SeasonalElements from './SeasonalElements';
-import { formatLastWatered, wateringsUntilNextStage, getStageProgress, getStageFromCount } from '@/utils/garden';
+import { formatLastWatered, wateringsUntilNextStage, getStageProgress, getStageFromCount, wateredToday, getDailyPhrase } from '@/utils/garden';
 import { useBloomMessage } from '@/hooks/useBloomMessage';
 import { useTimeOfDay, TimeOfDay } from '@/hooks/useTimeOfDay';
 import { useSeasonOfYear } from '@/hooks/useSeasonOfYear';
@@ -100,10 +100,12 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
   const isMaxStage   = toNext === null;
   const isDefaultName = garden.plantName === 'Mi planta';
   const bloomMessage  = useBloomMessage(garden, hoursAway);
-  const timeOfDay     = useTimeOfDay();
-  const season        = useSeasonOfYear();
-  const p             = PALETTES[timeOfDay];
-  const dark          = p.isDark;
+  const timeOfDay      = useTimeOfDay();
+  const season         = useSeasonOfYear();
+  const p              = PALETTES[timeOfDay];
+  const dark           = p.isDark;
+  const alreadyWatered = wateredToday(garden);
+  const dailyPhrase    = alreadyWatered ? getDailyPhrase(season) : null;
 
   // Semantic color shortcuts — avoids repetitive inline conditionals
   const c = {
@@ -293,20 +295,33 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           )}
         </motion.div>
 
-        {/* ── Bloom message ────────────────────────────────── */}
-        <AnimatePresence>
-          {bloomMessage && (
+        {/* ── Daily phrase (after watering) or bloom message ── */}
+        <AnimatePresence mode="wait">
+          {dailyPhrase ? (
+            <motion.p
+              key="daily-phrase"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.6, delay: 0.3, ease: 'easeInOut' }}
+              className="text-sm font-light tracking-wide text-center px-8 mt-3 leading-relaxed"
+              style={{ color: c.msg }}
+            >
+              {dailyPhrase}
+            </motion.p>
+          ) : bloomMessage ? (
             <motion.p
               key={bloomMessage}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 1.4, delay: 1.0, ease: 'easeInOut' }}
               className="text-xs font-light tracking-wide text-center px-8 mt-1"
               style={{ color: c.msg }}
             >
               {bloomMessage}
             </motion.p>
-          )}
+          ) : null}
         </AnimatePresence>
       </div>
 
@@ -317,10 +332,13 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
           onClick={onWater}
-          className="w-full py-5 text-white rounded-2xl text-base font-medium tracking-wide cta-pulse no-select active:scale-95 transition-transform"
-          style={{ backgroundColor: p.btnBg }}
+          className={`w-full py-5 text-white rounded-2xl text-base font-medium tracking-wide no-select active:scale-95 transition-all duration-500 ${alreadyWatered ? '' : 'cta-pulse'}`}
+          style={{
+            backgroundColor: p.btnBg,
+            opacity: alreadyWatered ? 0.45 : 1,
+          }}
         >
-          Regar ahora
+          {alreadyWatered ? 'Regar de nuevo' : 'Regar ahora'}
         </motion.button>
 
         <motion.p
@@ -333,6 +351,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           {garden.wateringCount === 0
             ? 'Primera gota de agua'
             : `${garden.wateringCount} ${garden.wateringCount === 1 ? 'riego' : 'riegos'} en total`}
+          {alreadyWatered && <span style={{ color: c.green }}> · ya regaste hoy</span>}
         </motion.p>
       </div>
     </motion.div>

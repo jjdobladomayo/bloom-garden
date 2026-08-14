@@ -13,6 +13,7 @@ import BloomMoment from '@/components/BloomMoment';
 import NamePlantModal from '@/components/NamePlantModal';
 import InstallPrompt from '@/components/InstallPrompt';
 import { GrowthStage } from '@/types/garden';
+import { wateredToday } from '@/utils/garden';
 
 type Screen = 'loading' | 'welcome' | 'home' | 'watering' | 'moment' | 'growth';
 
@@ -51,9 +52,12 @@ export default function App() {
   const handleWater = () => setScreen('watering');
 
   const handleWateringComplete = () => {
+    // Extra waterings (already watered today) skip BloomMoment and return home directly.
+    // The daily phrase on GardenScreen is the contemplation reward.
+    const isExtra = garden ? wateredToday(garden) : false;
     if (garden) setPrevStage(garden.stage);
     completeWatering();
-    setScreen('moment'); // BloomMoment — 2.7s calm transition
+    setScreen(isExtra ? 'home' : 'moment');
   };
 
   const handleWateringCancel = () => setScreen('home');
