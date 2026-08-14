@@ -1,5 +1,6 @@
-const CACHE_NAME = 'bloom-v1';
-const PRECACHE = ['/', '/manifest.json', '/icons/icon.svg'];
+// bloom-v2 — network-first for navigation, cache-first for hashed static assets
+const CACHE_NAME = 'bloom-v2';
+const PRECACHE = ['/manifest.json', '/icons/icon.svg'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -19,15 +20,34 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // Next.js hashed assets (_next/static/) are immutable — cache-first forever
+  if (url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
+          if (!response || response.status !== 200 || response.type !== 'basic') return response;
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // Navigation requests and everything else — network-first, cache as fallback
+  // This guarantees users always load the latest deployed version when online.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== 'basic') return response;
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
+        }
         return response;
-      });
-    })
+      })
+      .catch(() => caches.match(event.request))
   );
 });
