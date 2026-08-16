@@ -125,7 +125,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
   const dailyCount      = getDailyWateringCount(garden);
   const alreadyWatered  = wateredToday(garden);              // 1+ waterings today
   const reachedDailyMax = !canWaterMore(garden);             // exactly 5 today
-  const dailyPhrase     = alreadyWatered ? getDailyPhrase(season) : null;
+  const dailyPhrase     = alreadyWatered ? getDailyPhrase(season, garden.createdAt ?? garden.lastOpenedAt) : null;
 
   // ── Tree maturity ──────────────────────────────────────────────────────────
   const treeMaturity  = getTreeMaturity(garden.wateringCount);
