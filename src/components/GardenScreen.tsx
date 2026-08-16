@@ -314,21 +314,26 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
             )}
           </AnimatePresence>
 
-          {/* Main plant — zoom in on "Ver crecer" to appreciate details */}
+          {/* Main plant — two layers: outer motion.div scales, inner div floats.
+               CSS @keyframes wins over inline style so they MUST be separate. */}
           <motion.div
-            className="plant-float z-10"
-            style={p.plantGlow ? { filter: `drop-shadow(${p.plantGlow})` } : undefined}
+            className="z-10"
             animate={{ scale: isZooming ? 1.45 : 1 }}
             transition={isZooming
               ? { type: 'spring', stiffness: 180, damping: 18 }
               : { duration: 1.0, ease: 'easeInOut' }
             }
           >
-            <PlantDisplay
-              stage={garden.stage}
-              size={220}
-              maturity={treeMaturity}
-            />
+            <div
+              className="plant-float"
+              style={p.plantGlow ? { filter: `drop-shadow(${p.plantGlow})` } : undefined}
+            >
+              <PlantDisplay
+                stage={garden.stage}
+                size={220}
+                maturity={treeMaturity}
+              />
+            </div>
           </motion.div>
         </div>
 
