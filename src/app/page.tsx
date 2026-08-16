@@ -12,8 +12,9 @@ import PassiveGrowthModal from '@/components/PassiveGrowthModal';
 import BloomMoment from '@/components/BloomMoment';
 import NamePlantModal from '@/components/NamePlantModal';
 import InstallPrompt from '@/components/InstallPrompt';
+import VerticalWorld from '@/components/VerticalWorld';
 import { GrowthStage } from '@/types/garden';
-import { wateredToday } from '@/utils/garden';
+import { wateredToday, getTreeMaturity } from '@/utils/garden';
 
 type Screen = 'loading' | 'welcome' | 'home' | 'watering' | 'moment' | 'growth';
 
@@ -34,6 +35,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('loading');
   const [prevStage, setPrevStage] = useState<GrowthStage | null>(null);
   const [showRename, setShowRename] = useState(false);   // ← lifted here
+  const [showExplore, setShowExplore] = useState(false); // Vertical world overlay
 
   // Resolve initial screen once data loads
   useEffect(() => {
@@ -77,6 +79,9 @@ export default function App() {
     setScreen('home');
   };
 
+  const handleExplore = () => setShowExplore(true);
+  const handleCloseExplore = () => setShowExplore(false);
+
   // Name modal — onSave only updates the name; the modal drives its own exit animation
   // and calls onClose() when the animation completes (avoids AnimatePresence safeToRemove issues)
   const handleRenameSave = (name: string) => {
@@ -114,6 +119,7 @@ export default function App() {
             hoursAway={hoursAway}
             onWater={handleWater}
             onOpenRename={() => setShowRename(true)}
+            onExplore={handleExplore}
           />
         )}
 
@@ -172,6 +178,17 @@ export default function App() {
             key="install"
             onInstall={promptInstall}
             onDismiss={dismissPrompt}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Vertical world overlay ─────────────────────── */}
+      <AnimatePresence>
+        {showExplore && garden && (
+          <VerticalWorld
+            key="explore"
+            maturity={getTreeMaturity(garden.wateringCount)}
+            onClose={handleCloseExplore}
           />
         )}
       </AnimatePresence>

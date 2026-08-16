@@ -105,9 +105,10 @@ interface Props {
   onWater: () => void;
   onOpenRename: () => void;
   hoursAway: number;
+  onExplore?: () => void;
 }
 
-export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway }: Props) {
+export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway, onExplore }: Props) {
   const [isZooming, setIsZooming] = useState(false);
 
   const lastText      = formatLastWatered(garden.lastWatered);
@@ -156,9 +157,13 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
   // ── Button behaviour ───────────────────────────────────────────────────────
   const handleButtonPress = () => {
     if (reachedDailyMax) {
-      // "Ver crecer" — no navigation, just a zoom moment
-      setIsZooming(true);
-      setTimeout(() => setIsZooming(false), 1200);
+      // "Ver crecer" — open the vertical world exploration
+      if (onExplore) {
+        onExplore();
+      } else {
+        setIsZooming(true);
+        setTimeout(() => setIsZooming(false), 1200);
+      }
     } else {
       onWater();
     }
@@ -255,7 +260,13 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           style={{ background: `radial-gradient(ellipse at top, ${p.glowColor} 0%, transparent 70%)` }}
         />
 
-        <div className="relative flex items-end justify-center w-full" style={{ minHeight: 260 }}>
+        <motion.div
+          className="relative flex items-end justify-center w-full"
+          style={{ minHeight: 260, touchAction: onExplore ? 'pan-x' : 'auto' }}
+          onPanEnd={onExplore ? (_, info) => {
+            if (Math.abs(info.offset.y) > 55) onExplore();
+          } : undefined}
+        >
           <AnimatePresence>
             {garden.passiveElements.slice(-5).map((el) => (
               <PassiveElementDot key={el.id} element={el} />
@@ -329,7 +340,27 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
               maturity={treeMaturity}
             />
           </motion.div>
-        </div>
+        </motion.div>
+
+        {/* Explore hint — subtle tap target, always visible */}
+        {onExplore && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.0 }}
+            onClick={onExplore}
+            className="mt-1 mb-0 flex flex-col items-center gap-0.5 active:scale-95 transition-transform no-select"
+            style={{ color: c.muted }}
+          >
+            <motion.span
+              animate={{ y: [0, 3, 0] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ fontSize: '0.65rem', lineHeight: 1, letterSpacing: '0.15em' }}
+            >
+              ↕
+            </motion.span>
+          </motion.button>
+        )}
 
         {/* Thin separator */}
         <div
