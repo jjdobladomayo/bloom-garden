@@ -272,7 +272,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
                 exit={{ opacity: 0, scaleX: 0.3 }}
                 transition={{ duration: 1.2, ease: 'easeOut' }}
                 className="absolute pointer-events-none"
-                style={{ bottom: 4, left: '50%', transform: 'translateX(-50%)', zIndex: 6 }}
+                style={{ bottom: 4, left: '50%', transform: 'translateX(-50%)', zIndex: 12 }}
               >
                 <svg width="120" height="38" viewBox="0 0 120 38" fill="none">
                   {/* Puddle water */}
@@ -304,7 +304,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
                 exit={{ opacity: 0, scale: 0.3 }}
                 transition={{ duration: 2.8, ease: 'easeOut' }}
                 className="absolute"
-                style={{ right: '7%', bottom: 0, zIndex: 8 }}
+                style={{ right: '7%', bottom: 0, zIndex: 15 }}
               >
                 <PlantDisplay
                   stage={getStageFromCount(garden.secondaryPlant.wateringCount)}
@@ -474,7 +474,7 @@ function PassiveElementDot({ element }: { element: PassiveElement }) {
         left: `${element.position.x}%`,
         bottom: `${100 - element.position.y}%`,
         transform: 'translate(-50%, 50%)',
-        zIndex: element.type === 'bird' || element.type === 'butterfly' ? 20 : 5,
+        zIndex: element.type === 'bird' || element.type === 'butterfly' ? 20 : 16,
       }}
     >
       {PASSIVE_EMOJIS[element.type] ?? '🌿'}
