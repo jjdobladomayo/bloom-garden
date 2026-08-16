@@ -83,15 +83,33 @@ function rand(min: number, max: number) {
   return Math.random() * (max - min) + min;
 }
 
+// y is "distance from top of the scene container" (0=top, 100=bottom).
+// PassiveElementDot uses  bottom: (100 - y)%  so:
+//   high y → near the bottom (ground level)
+//   low  y → near the top (flying / mid-air)
+const TYPE_Y_RANGE: Record<PassiveElementType, [number, number]> = {
+  stone:     [82, 92],  // always on the ground
+  mushroom:  [78, 90],  // grows at ground level
+  flower:    [74, 88],  // at ground / low on stem
+  dewdrop:   [76, 88],  // near ground
+  leaf:      [60, 82],  // can tumble a bit higher (falling leaf)
+  butterfly: [38, 68],  // flying mid-height
+  bird:      [32, 62],  // flying, can be quite high
+};
+
 export function generatePassiveElements(hoursAway: number): PassiveElement[] {
   if (hoursAway < 3) return [];
   const count = Math.min(Math.floor(hoursAway / 4) + 1, 3);
-  return Array.from({ length: count }, (_, i) => ({
-    type: ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)],
-    id: `pe_${Date.now()}_${i}`,
-    addedAt: Date.now(),
-    position: { x: rand(15, 85), y: rand(55, 88) },
-  }));
+  return Array.from({ length: count }, (_, i) => {
+    const type = ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
+    const [yMin, yMax] = TYPE_Y_RANGE[type];
+    return {
+      type,
+      id: `pe_${Date.now()}_${i}`,
+      addedAt: Date.now(),
+      position: { x: rand(12, 88), y: rand(yMin, yMax) },
+    };
+  });
 }
 
 // ─── Garden age ─────────────────────────────────────────────────────────────
@@ -231,13 +249,15 @@ const DAILY_PHRASES: Record<Season, string[]> = {
 };
 
 /**
- * Returns the same phrase for every user on a given calendar day.
- * Cycles through the seasonal list on a 7-day rhythm.
+ * Returns a phrase for today that varies both by calendar day AND by garden,
+ * so two users on the same day see different messages.
+ * `createdAt` acts as a per-garden seed that shifts the cycle offset.
  */
-export function getDailyPhrase(season: Season): string {
-  const phrases = DAILY_PHRASES[season];
-  const day = Math.floor(Date.now() / 86_400_000);
-  return phrases[day % phrases.length];
+export function getDailyPhrase(season: Season, createdAt: number): string {
+  const phrases   = DAILY_PHRASES[season];
+  const day       = Math.floor(Date.now()     / 86_400_000);
+  const userShift = Math.floor(createdAt      / 86_400_000) % phrases.length;
+  return phrases[(day + userShift) % phrases.length];
 }
 
 /** How long a puddle lasts depends on the time of day (sun evaporates it). */
