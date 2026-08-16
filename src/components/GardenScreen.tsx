@@ -17,6 +17,8 @@ import {
   getTreeMaturity,
   TREE_MATURITY_LABELS,
   getDailyPhrase,
+  getGardenAgeLabel,
+  getSeasonsLivedLabel,
 } from '@/utils/garden';
 import { useBloomMessage } from '@/hooks/useBloomMessage';
 import { useTimeOfDay, TimeOfDay } from '@/hooks/useTimeOfDay';
@@ -130,6 +132,10 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
   const stageLabel    = garden.stage === 'tree'
     ? TREE_MATURITY_LABELS[treeMaturity]
     : STAGE_LABELS[garden.stage];
+
+  // ── Garden age + seasons ────────────────────────────────────────────────────
+  const ageLabel     = getGardenAgeLabel(garden.createdAt ?? garden.lastOpenedAt);
+  const seasonsLabel = getSeasonsLivedLabel(garden.createdAt ?? garden.lastOpenedAt);
 
   // ── Puddle ─────────────────────────────────────────────────────────────────
   const hasPuddle = garden.puddle
@@ -356,23 +362,26 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
             </div>
           )}
 
-          <div className="flex items-center gap-5">
-            {garden.streakDays > 0 && (
+          <div className="flex items-center gap-5 flex-wrap justify-center">
+            {/* Garden age — always present */}
+            <div className="flex items-center gap-1 text-xs" style={{ color: c.stat }}>
+              <span>🌱</span>
+              <span>{ageLabel}</span>
+            </div>
+
+            {/* Seasons lived — appears after first season change */}
+            {seasonsLabel && (
               <div className="flex items-center gap-1 text-xs" style={{ color: c.stat }}>
-                <span>🔥</span>
-                <span>{garden.streakDays} {garden.streakDays === 1 ? 'día' : 'días'}</span>
+                <span>🍂</span>
+                <span>{seasonsLabel}</span>
               </div>
             )}
+
+            {/* Last watered */}
             {garden.lastWatered && (
               <div className="flex items-center gap-1 text-xs" style={{ color: c.stat }}>
                 <span>💧</span>
                 <span>{lastText}</span>
-              </div>
-            )}
-            {isMaxStage && garden.stage !== 'tree' && (
-              <div className="flex items-center gap-1 text-xs" style={{ color: c.green }}>
-                <span>✨</span>
-                <span>Árbol completo</span>
               </div>
             )}
           </div>

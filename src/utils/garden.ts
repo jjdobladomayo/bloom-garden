@@ -94,6 +94,82 @@ export function generatePassiveElements(hoursAway: number): PassiveElement[] {
   }));
 }
 
+// ─── Garden age ─────────────────────────────────────────────────────────────
+
+/**
+ * Human-readable age of the garden since createdAt.
+ * Returns phrases like "recién nacido", "3 semanas", "2 meses", "1 año".
+ */
+export function getGardenAgeLabel(createdAt: number): string {
+  const days = Math.floor((Date.now() - createdAt) / 86_400_000);
+  if (days <= 0)  return 'recién nacido';
+  if (days === 1) return '1 día';
+  if (days <  7)  return `${days} días`;
+  if (days < 14)  return '1 semana';
+  if (days < 30)  return `${Math.floor(days / 7)} semanas`;
+  if (days < 60)  return '1 mes';
+  if (days < 365) return `${Math.floor(days / 30)} meses`;
+  if (days < 730) return '1 año';
+  return `${Math.floor(days / 365)} años`;
+}
+
+// ─── Seasons lived ────────────────────────────────────────────────────────────
+
+type SeasonKey = 'spring' | 'summer' | 'autumn' | 'winter';
+
+const SEASON_ES: Record<SeasonKey, string> = {
+  spring: 'primavera',
+  summer: 'verano',
+  autumn: 'otoño',
+  winter: 'invierno',
+};
+
+function seasonKeyAt(ts: number): SeasonKey {
+  const d   = new Date(ts);
+  const m   = d.getMonth();  // 0-11
+  const day = d.getDate();
+  if (m < 2  || (m === 2  && day < 20)) return 'winter';
+  if (m < 5  || (m === 5  && day < 21)) return 'spring';
+  if (m < 8  || (m === 8  && day < 23)) return 'summer';
+  if (m < 11 || (m === 11 && day < 21)) return 'autumn';
+  return 'winter';
+}
+
+/**
+ * Returns a phrase describing how many seasons the garden has experienced
+ * AFTER its birth season, e.g. "ha vivido 1 otoño" or "ha visto 3 estaciones".
+ * Returns null if still in the same season as when it was born.
+ */
+export function getSeasonsLivedLabel(createdAt: number): string | null {
+  const now      = Date.now();
+  const birthKey = `${new Date(createdAt).getFullYear()}-${seasonKeyAt(createdAt)}`;
+
+  // Walk in 15-day steps to catch every season boundary
+  const seen    = new Set<string>([birthKey]);
+  const entered: SeasonKey[] = [];
+
+  let cursor = createdAt + 15 * 86_400_000;
+  while (cursor <= now) {
+    const d   = new Date(cursor);
+    const key = `${d.getFullYear()}-${seasonKeyAt(cursor)}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      entered.push(seasonKeyAt(cursor));
+    }
+    cursor += 15 * 86_400_000;
+  }
+  // Ensure the current moment is covered
+  const nowD   = new Date(now);
+  const nowKey = `${nowD.getFullYear()}-${seasonKeyAt(now)}`;
+  if (!seen.has(nowKey)) entered.push(seasonKeyAt(now));
+
+  const n = entered.length;
+  if (n === 0) return null;
+  if (n === 1) return `ha vivido 1 ${SEASON_ES[entered[0]]}`;
+  if (n < 4)   return `ha vivido ${n} estaciones`;
+  return 'ha visto todas las estaciones';
+}
+
 // ─── Daily rhythm ───────────────────────────────────────────────────────────
 
 /** How many times the garden has been watered today (0–5). Day-rollover safe. */
