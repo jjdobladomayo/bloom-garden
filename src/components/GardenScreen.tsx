@@ -156,9 +156,9 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
   // ── Button behaviour ───────────────────────────────────────────────────────
   const handleButtonPress = () => {
     if (reachedDailyMax) {
-      // "Ver crecer" — no navigation, just a zoom moment
+      // "Ver crecer" — zoom in to appreciate flowers, birds, details, then return
       setIsZooming(true);
-      setTimeout(() => setIsZooming(false), 1200);
+      setTimeout(() => setIsZooming(false), 2800); // 0.7s in + ~2s hold + 1s out
     } else {
       onWater();
     }
@@ -314,13 +314,14 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
             )}
           </AnimatePresence>
 
-          {/* Main plant — zoom animation on "Ver crecer" */}
+          {/* Main plant — zoom in on "Ver crecer" to appreciate details */}
           <motion.div
             className="plant-float z-10"
             style={p.plantGlow ? { filter: `drop-shadow(${p.plantGlow})` } : undefined}
-            animate={isZooming
-              ? { scale: [1, 1.12, 1.04, 1], transition: { duration: 1.0, ease: 'easeInOut' } }
-              : { scale: 1 }
+            animate={{ scale: isZooming ? 1.45 : 1 }}
+            transition={isZooming
+              ? { type: 'spring', stiffness: 180, damping: 18 }
+              : { duration: 1.0, ease: 'easeInOut' }
             }
           >
             <PlantDisplay
