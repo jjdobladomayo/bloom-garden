@@ -1,11 +1,23 @@
 'use client';
 
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GardenState, STAGE_LABELS, PassiveElement } from '@/types/garden';
 import PlantDisplay from './PlantDisplay';
 import StarField from './StarField';
 import SeasonalElements from './SeasonalElements';
-import { formatLastWatered, wateringsUntilNextStage, getStageProgress, getStageFromCount, wateredToday, getDailyPhrase } from '@/utils/garden';
+import {
+  formatLastWatered,
+  wateringsUntilNextStage,
+  getStageProgress,
+  getStageFromCount,
+  wateredToday,
+  getDailyWateringCount,
+  canWaterMore,
+  getTreeMaturity,
+  TREE_MATURITY_LABELS,
+  getDailyPhrase,
+} from '@/utils/garden';
 import { useBloomMessage } from '@/hooks/useBloomMessage';
 import { useTimeOfDay, TimeOfDay } from '@/hooks/useTimeOfDay';
 import { useSeasonOfYear } from '@/hooks/useSeasonOfYear';
@@ -19,7 +31,7 @@ interface Palette {
   progressBg: string;
   progressFill: string;
   btnBg: string;
-  separatorAlpha: number; // 0–1
+  separatorAlpha: number;
   plantGlow: string | null;
 }
 
@@ -94,20 +106,37 @@ interface Props {
 }
 
 export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway }: Props) {
-  const lastText     = formatLastWatered(garden.lastWatered);
-  const toNext       = wateringsUntilNextStage(garden);
+  const [isZooming, setIsZooming] = useState(false);
+
+  const lastText      = formatLastWatered(garden.lastWatered);
+  const toNext        = wateringsUntilNextStage(garden);
   const stageProgress = getStageProgress(garden);
-  const isMaxStage   = toNext === null;
+  const isMaxStage    = toNext === null;
   const isDefaultName = garden.plantName === 'Mi planta';
   const bloomMessage  = useBloomMessage(garden, hoursAway);
-  const timeOfDay      = useTimeOfDay();
-  const season         = useSeasonOfYear();
-  const p              = PALETTES[timeOfDay];
-  const dark           = p.isDark;
-  const alreadyWatered = wateredToday(garden);
-  const dailyPhrase    = alreadyWatered ? getDailyPhrase(season) : null;
+  const timeOfDay     = useTimeOfDay();
+  const season        = useSeasonOfYear();
+  const p             = PALETTES[timeOfDay];
+  const dark          = p.isDark;
 
-  // Semantic color shortcuts — avoids repetitive inline conditionals
+  // ── Daily watering state ──────────────────────────────────────────────────
+  const dailyCount      = getDailyWateringCount(garden);
+  const alreadyWatered  = wateredToday(garden);              // 1+ waterings today
+  const reachedDailyMax = !canWaterMore(garden);             // exactly 5 today
+  const dailyPhrase     = alreadyWatered ? getDailyPhrase(season) : null;
+
+  // ── Tree maturity ──────────────────────────────────────────────────────────
+  const treeMaturity  = getTreeMaturity(garden.wateringCount);
+  const stageLabel    = garden.stage === 'tree'
+    ? TREE_MATURITY_LABELS[treeMaturity]
+    : STAGE_LABELS[garden.stage];
+
+  // ── Puddle ─────────────────────────────────────────────────────────────────
+  const hasPuddle = garden.puddle
+    ? Date.now() < garden.puddle.evaporatesAt
+    : false;
+
+  // Semantic color shortcuts
   const c = {
     brand:  dark ? '#c8d8e8' : '#6b7280',
     name:   dark ? '#a8bcc8' : '#6b7280',
@@ -118,6 +147,26 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
     msg:    dark ? '#607888' : '#9ca3af',
   };
 
+  // ── Button behaviour ───────────────────────────────────────────────────────
+  const handleButtonPress = () => {
+    if (reachedDailyMax) {
+      // "Ver crecer" — no navigation, just a zoom moment
+      setIsZooming(true);
+      setTimeout(() => setIsZooming(false), 1200);
+    } else {
+      onWater();
+    }
+  };
+
+  const buttonLabel = reachedDailyMax
+    ? 'Ver crecer 🌿'
+    : alreadyWatered
+      ? 'Regar de nuevo'
+      : 'Regar ahora';
+
+  // Pulse only on the very first daily watering prompt
+  const buttonPulse = !alreadyWatered && !reachedDailyMax;
+
   return (
     <motion.div
       initial={{ opacity: 0, backgroundColor: p.bg }}
@@ -125,7 +174,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
       exit={{ opacity: 0 }}
       transition={{
         opacity: { duration: 0.4 },
-        backgroundColor: { duration: 180, ease: 'linear' }, // gentle 3-min shift
+        backgroundColor: { duration: 180, ease: 'linear' },
       }}
       className="flex flex-col min-h-screen safe-top safe-bottom relative overflow-hidden"
     >
@@ -194,7 +243,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
 
       {/* ── Garden scene ──────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-2 relative" style={{ zIndex: 2 }}>
-        {/* Ambient glow at top */}
+        {/* Ambient glow */}
         <div
           className="absolute inset-x-4 top-0 bottom-1/4 rounded-3xl pointer-events-none"
           style={{ background: `radial-gradient(ellipse at top, ${p.glowColor} 0%, transparent 70%)` }}
@@ -207,7 +256,39 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
             ))}
           </AnimatePresence>
 
-          {/* Secondary seedling — appears once the main plant becomes a tree */}
+          {/* ── Puddle + drinking bird ─────────────────── */}
+          <AnimatePresence>
+            {hasPuddle && (
+              <motion.div
+                key="puddle"
+                initial={{ opacity: 0, scaleX: 0.3 }}
+                animate={{ opacity: 1, scaleX: 1 }}
+                exit={{ opacity: 0, scaleX: 0.3 }}
+                transition={{ duration: 1.2, ease: 'easeOut' }}
+                className="absolute pointer-events-none"
+                style={{ bottom: 4, left: '50%', transform: 'translateX(-50%)', zIndex: 6 }}
+              >
+                <svg width="120" height="38" viewBox="0 0 120 38" fill="none">
+                  {/* Puddle water */}
+                  <ellipse cx="52" cy="28" rx="42" ry="9" fill="#93c5fd" opacity="0.38" />
+                  <ellipse cx="52" cy="26" rx="36" ry="7" fill="#bfdbfe" opacity="0.5"  />
+                  {/* Water shimmer */}
+                  <path d="M30 25 Q38 23 46 25" stroke="#e0f2fe" strokeWidth="1.2" strokeLinecap="round" opacity="0.7" />
+                  {/* Bird drinking — simple silhouette */}
+                  <circle cx="90" cy="18" r="5" fill="#6b7280" />
+                  <ellipse cx="85" cy="22" rx="8" ry="5" fill="#6b7280" transform="rotate(-20 85 22)" />
+                  {/* Beak pointing down toward water */}
+                  <path d="M90 22 L93 28" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" />
+                  {/* Tail */}
+                  <path d="M77 22 Q74 18 72 19" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" fill="none" />
+                  {/* Wing hint */}
+                  <path d="M82 19 Q84 15 88 17" stroke="#9ca3af" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+                </svg>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Secondary seedling */}
           <AnimatePresence>
             {garden.secondaryPlant && (
               <motion.div
@@ -227,13 +308,21 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
             )}
           </AnimatePresence>
 
-          {/* Main plant with optional night glow */}
-          <div
+          {/* Main plant — zoom animation on "Ver crecer" */}
+          <motion.div
             className="plant-float z-10"
             style={p.plantGlow ? { filter: `drop-shadow(${p.plantGlow})` } : undefined}
+            animate={isZooming
+              ? { scale: [1, 1.12, 1.04, 1], transition: { duration: 1.0, ease: 'easeInOut' } }
+              : { scale: 1 }
+            }
           >
-            <PlantDisplay stage={garden.stage} size={220} />
-          </div>
+            <PlantDisplay
+              stage={garden.stage}
+              size={220}
+              maturity={treeMaturity}
+            />
+          </motion.div>
         </div>
 
         {/* Thin separator */}
@@ -252,7 +341,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           className="mt-6 flex flex-col items-center gap-3 w-full max-w-xs"
         >
           <div className="text-xs uppercase tracking-widest" style={{ color: c.label }}>
-            {STAGE_LABELS[garden.stage]}
+            {stageLabel}
           </div>
 
           {!isMaxStage && (
@@ -280,7 +369,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
                 <span>{lastText}</span>
               </div>
             )}
-            {isMaxStage && (
+            {isMaxStage && garden.stage !== 'tree' && (
               <div className="flex items-center gap-1 text-xs" style={{ color: c.green }}>
                 <span>✨</span>
                 <span>Árbol completo</span>
@@ -295,7 +384,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           )}
         </motion.div>
 
-        {/* ── Daily phrase (after watering) or bloom message ── */}
+        {/* ── Daily phrase or bloom message ── */}
         <AnimatePresence mode="wait">
           {dailyPhrase ? (
             <motion.p
@@ -331,14 +420,15 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          onClick={onWater}
-          className={`w-full py-5 text-white rounded-2xl text-base font-medium tracking-wide no-select active:scale-95 transition-all duration-500 ${alreadyWatered ? '' : 'cta-pulse'}`}
+          onClick={handleButtonPress}
+          className={`w-full py-5 text-white rounded-2xl text-base font-medium tracking-wide no-select active:scale-95 transition-all duration-500 ${buttonPulse ? 'cta-pulse' : ''}`}
           style={{
-            backgroundColor: p.btnBg,
-            opacity: alreadyWatered ? 0.45 : 1,
+            backgroundColor: reachedDailyMax ? (dark ? '#1a4030' : '#c8e6c0') : p.btnBg,
+            color: reachedDailyMax ? (dark ? '#8dc88b' : '#2d6a2d') : '#fff',
+            opacity: (alreadyWatered && !reachedDailyMax) ? 0.55 : 1,
           }}
         >
-          {alreadyWatered ? 'Regar de nuevo' : 'Regar ahora'}
+          {buttonLabel}
         </motion.button>
 
         <motion.p
@@ -351,7 +441,12 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
           {garden.wateringCount === 0
             ? 'Primera gota de agua'
             : `${garden.wateringCount} ${garden.wateringCount === 1 ? 'riego' : 'riegos'} en total`}
-          {alreadyWatered && <span style={{ color: c.green }}> · ya regaste hoy</span>}
+          {reachedDailyMax
+            ? <span style={{ color: c.green }}> · listos por hoy 🌿</span>
+            : alreadyWatered
+              ? <span style={{ color: c.green }}> · {dailyCount} hoy</span>
+              : null
+          }
         </motion.p>
       </div>
     </motion.div>

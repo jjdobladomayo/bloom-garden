@@ -16,6 +16,15 @@ export interface PassiveElement {
   position: { x: number; y: number };
 }
 
+export type TreeMaturity = 'young' | 'adult' | 'mature' | 'old' | 'centenarian';
+
+export interface Puddle {
+  /** Timestamp when the puddle formed */
+  formedAt: number;
+  /** Timestamp when it evaporates (depends on time of day) */
+  evaporatesAt: number;
+}
+
 export interface SecondaryPlant {
   /** Waterings applied to this seedling since it appeared */
   wateringCount: number;
@@ -35,6 +44,12 @@ export interface GardenState {
   newPassiveElements: PassiveElement[];
   /** A new seedling that appears once the main plant becomes a tree */
   secondaryPlant?: SecondaryPlant;
+  /** How many times watered today (0–5). Resets each calendar day. */
+  dailyWateringCount: number;
+  /** UTC day index (Date.now()/86400000 floored) — used to detect day rollover */
+  lastWateringDay: number;
+  /** Puddle that forms after the 5th watering of the day */
+  puddle?: Puddle;
 }
 
 export const STAGE_LABELS: Record<GrowthStage, string> = {

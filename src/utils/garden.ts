@@ -3,12 +3,15 @@ import {
   GrowthStage,
   PassiveElement,
   PassiveElementType,
+  Puddle,
   SecondaryPlant,
+  TreeMaturity,
   STAGE_ORDER,
   STAGE_THRESHOLDS,
 } from '@/types/garden';
 
 export function createInitialGarden(name = 'Mi planta'): GardenState {
+  const today = Math.floor(Date.now() / 86_400_000);
   return {
     stage: 'seed',
     wateringCount: 0,
@@ -19,6 +22,8 @@ export function createInitialGarden(name = 'Mi planta'): GardenState {
     plantName: name.trim() || 'Mi planta',
     createdAt: Date.now(),
     newPassiveElements: [],
+    dailyWateringCount: 0,
+    lastWateringDay: today,
   };
 }
 
@@ -50,16 +55,28 @@ export function getStageProgress(state: GardenState): number {
   return (state.wateringCount - start) / (end - start);
 }
 
+// ─── Tree maturity ──────────────────────────────────────────────────────────
+
+export function getTreeMaturity(wateringCount: number): TreeMaturity {
+  if (wateringCount >= 500) return 'centenarian';
+  if (wateringCount >= 365) return 'old';
+  if (wateringCount >= 200) return 'mature';
+  if (wateringCount >= 100) return 'adult';
+  return 'young';
+}
+
+export const TREE_MATURITY_LABELS: Record<TreeMaturity, string> = {
+  young:       'Árbol joven',
+  adult:       'Árbol adulto',
+  mature:      'Árbol maduro',
+  old:         'Árbol viejo',
+  centenarian: 'Árbol centenario',
+};
+
 // ─── Passive growth ────────────────────────────────────────────────────────
 
 const ALL_TYPES: PassiveElementType[] = [
-  'leaf',
-  'flower',
-  'butterfly',
-  'bird',
-  'stone',
-  'mushroom',
-  'dewdrop',
+  'leaf', 'flower', 'butterfly', 'bird', 'stone', 'mushroom', 'dewdrop',
 ];
 
 function rand(min: number, max: number) {
@@ -79,16 +96,21 @@ export function generatePassiveElements(hoursAway: number): PassiveElement[] {
 
 // ─── Daily rhythm ───────────────────────────────────────────────────────────
 
-/** True if the garden was already watered today (calendar day, local time). */
+/** How many times the garden has been watered today (0–5). Day-rollover safe. */
+export function getDailyWateringCount(state: GardenState): number {
+  const today = Math.floor(Date.now() / 86_400_000);
+  if ((state.lastWateringDay ?? 0) < today) return 0;
+  return state.dailyWateringCount ?? 0;
+}
+
+/** True if there is still room for more waterings today (< 5). */
+export function canWaterMore(state: GardenState): boolean {
+  return getDailyWateringCount(state) < 5;
+}
+
+/** True if the garden has been watered at least once today. */
 export function wateredToday(state: GardenState): boolean {
-  if (!state.lastWatered) return false;
-  const last = new Date(state.lastWatered);
-  const now  = new Date();
-  return (
-    last.getFullYear() === now.getFullYear() &&
-    last.getMonth()    === now.getMonth()    &&
-    last.getDate()     === now.getDate()
-  );
+  return getDailyWateringCount(state) > 0;
 }
 
 type Season = 'spring' | 'summer' | 'autumn' | 'winter';
@@ -138,58 +160,77 @@ const DAILY_PHRASES: Record<Season, string[]> = {
  */
 export function getDailyPhrase(season: Season): string {
   const phrases = DAILY_PHRASES[season];
-  const day = Math.floor(Date.now() / 86_400_000); // UTC day index
+  const day = Math.floor(Date.now() / 86_400_000);
   return phrases[day % phrases.length];
+}
+
+/** How long a puddle lasts depends on the time of day (sun evaporates it). */
+function getPuddleLifeMs(): number {
+  const h = new Date().getHours();
+  if (h >= 8 && h < 18) return 3 * 3_600_000;  // daytime — 3 hours
+  if (h >= 18 && h < 22) return 5 * 3_600_000; // evening — 5 hours
+  return 8 * 3_600_000;                          // night — 8 hours
 }
 
 // ─── State transitions ──────────────────────────────────────────────────────
 
 export function processWatering(state: GardenState): GardenState {
-  // Extra waterings after the first of the day don't grow the plant.
-  // The ritual is still meaningful; the growth waits for tomorrow.
-  if (wateredToday(state)) return state;
+  const now   = Date.now();
+  const today = Math.floor(now / 86_400_000);
 
-  const now = Date.now();
-  const newCount = state.wateringCount + 1;
-  const newStage = getStageFromCount(newCount);
+  // Detect day rollover
+  const isNewDay    = (state.lastWateringDay ?? 0) < today;
+  const dailyCount  = isNewDay ? 0 : (state.dailyWateringCount ?? 0);
 
-  let newStreak = state.streakDays;
-  if (state.lastWatered) {
-    const daysSince = (now - state.lastWatered) / 86_400_000;
-    if (daysSince < 1) {
-      // already watered today — streak unchanged
-    } else if (daysSince < 2) {
-      newStreak = state.streakDays + 1;
+  // Hard cap: 5 waterings per day
+  if (dailyCount >= 5) return state;
+
+  const newDailyCount = dailyCount + 1;
+
+  // ── Growth: only the first watering of the day advances the plant ──────────
+  let newCount      = state.wateringCount;
+  let newStage      = state.stage;
+  let newStreak     = state.streakDays;
+  let secondaryPlant: SecondaryPlant | undefined = state.secondaryPlant;
+
+  if (dailyCount === 0) {
+    newCount = state.wateringCount + 1;
+    newStage = getStageFromCount(newCount);
+
+    if (state.lastWatered) {
+      const daysSince = (now - state.lastWatered) / 86_400_000;
+      if (daysSince >= 2)      newStreak = 1;
+      else if (daysSince >= 1) newStreak = state.streakDays + 1;
+      // else: same day — streak unchanged (shouldn't happen with new system)
     } else {
       newStreak = 1;
     }
-  } else {
-    newStreak = 1;
+
+    if (newStage === 'tree') {
+      secondaryPlant = !secondaryPlant
+        ? { wateringCount: 0, appearedAt: now }
+        : { ...secondaryPlant, wateringCount: secondaryPlant.wateringCount + 1 };
+    }
   }
 
-  // ── Secondary seedling ─────────────────────────────────────────────────────
-  // When the main plant reaches (or is already at) tree stage, a new seed
-  // quietly appears and grows with each subsequent watering.
-  let secondaryPlant: SecondaryPlant | undefined = state.secondaryPlant;
-
-  if (newStage === 'tree') {
-    if (!secondaryPlant) {
-      // Tree just completed (or first watering on an existing tree) — seed emerges
-      secondaryPlant = { wateringCount: 0, appearedAt: now };
-    } else {
-      // Grow the seedling one step (capped — it can also become a tree eventually)
-      secondaryPlant = { ...secondaryPlant, wateringCount: secondaryPlant.wateringCount + 1 };
-    }
+  // ── Puddle: forms on the 5th watering, evaporates naturally ────────────────
+  let puddle: Puddle | undefined = state.puddle;
+  if (puddle && now > puddle.evaporatesAt) puddle = undefined;
+  if (newDailyCount === 5) {
+    puddle = { formedAt: now, evaporatesAt: now + getPuddleLifeMs() };
   }
 
   return {
     ...state,
-    wateringCount: newCount,
-    stage: newStage,
-    lastWatered: now,
-    streakDays: newStreak,
-    newPassiveElements: [],
+    wateringCount:       newCount,
+    stage:               newStage,
+    lastWatered:         now,
+    streakDays:          newStreak,
+    dailyWateringCount:  newDailyCount,
+    lastWateringDay:     today,
+    newPassiveElements:  [],
     secondaryPlant,
+    puddle,
   };
 }
 
@@ -197,17 +238,31 @@ export function processReturn(state: GardenState): {
   updatedState: GardenState;
   hoursAway: number;
 } {
-  const now = Date.now();
+  const now    = Date.now();
+  const today  = Math.floor(now / 86_400_000);
   const hoursAway = (now - state.lastOpenedAt) / 3_600_000;
-  const newElements = generatePassiveElements(hoursAway);
-  const allElements = [...state.passiveElements, ...newElements].slice(-8);
+
+  const newElements  = generatePassiveElements(hoursAway);
+  const allElements  = [...state.passiveElements, ...newElements].slice(-8);
+
+  // Evaporate puddle if time has passed
+  let puddle = state.puddle;
+  if (puddle && now > puddle.evaporatesAt) puddle = undefined;
+
+  // Reset daily count on new day
+  const isNewDay           = (state.lastWateringDay ?? 0) < today;
+  const dailyWateringCount = isNewDay ? 0 : (state.dailyWateringCount ?? 0);
+  const lastWateringDay    = isNewDay ? today : (state.lastWateringDay ?? today);
 
   return {
     updatedState: {
       ...state,
-      lastOpenedAt: now,
-      passiveElements: allElements,
-      newPassiveElements: newElements,
+      lastOpenedAt:        now,
+      passiveElements:     allElements,
+      newPassiveElements:  newElements,
+      puddle,
+      dailyWateringCount,
+      lastWateringDay,
     },
     hoursAway,
   };
@@ -221,7 +276,7 @@ export function formatLastWatered(ts: number | null): string {
   const m = Math.floor(diff / 60_000);
   const h = Math.floor(diff / 3_600_000);
   const d = Math.floor(diff / 86_400_000);
-  if (m < 1) return 'Justo ahora';
+  if (m < 1)  return 'Justo ahora';
   if (m < 60) return `Hace ${m} min`;
   if (h < 24) return `Hace ${h}h`;
   if (d === 1) return 'Ayer';
