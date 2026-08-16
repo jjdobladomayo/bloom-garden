@@ -97,17 +97,30 @@ const TYPE_Y_RANGE: Record<PassiveElementType, [number, number]> = {
   bird:      [32, 62],  // flying, can be quite high
 };
 
+// x is distance from left edge (0–100). Trunk is at 50%.
+// Ground elements cluster near the trunk; aerial elements roam freely.
+const TYPE_X_RANGE: Record<PassiveElementType, [number, number]> = {
+  stone:     [38, 62],  // tight — right at trunk base
+  mushroom:  [33, 67],  // just outside stone zone
+  flower:    [30, 70],  // slightly wider, still anchored to trunk area
+  dewdrop:   [38, 62],  // near drip zone of leaves
+  leaf:      [20, 80],  // can drift further (falling)
+  butterfly: [12, 88],  // free to roam
+  bird:      [12, 88],  // free to roam
+};
+
 export function generatePassiveElements(hoursAway: number): PassiveElement[] {
   if (hoursAway < 3) return [];
   const count = Math.min(Math.floor(hoursAway / 4) + 1, 3);
   return Array.from({ length: count }, (_, i) => {
     const type = ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
     const [yMin, yMax] = TYPE_Y_RANGE[type];
+    const [xMin, xMax] = TYPE_X_RANGE[type];
     return {
       type,
       id: `pe_${Date.now()}_${i}`,
       addedAt: Date.now(),
-      position: { x: rand(12, 88), y: rand(yMin, yMax) },
+      position: { x: rand(xMin, xMax), y: rand(yMin, yMax) },
     };
   });
 }

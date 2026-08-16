@@ -13,7 +13,8 @@ import BloomMoment from '@/components/BloomMoment';
 import NamePlantModal from '@/components/NamePlantModal';
 import InstallPrompt from '@/components/InstallPrompt';
 import { GrowthStage } from '@/types/garden';
-import { wateredToday } from '@/utils/garden';
+import { wateredToday, getTreeMaturity } from '@/utils/garden';
+import TreeEcosystem from '@/components/TreeEcosystem';
 
 type Screen = 'loading' | 'welcome' | 'home' | 'watering' | 'moment' | 'growth';
 
@@ -33,7 +34,8 @@ export default function App() {
 
   const [screen, setScreen] = useState<Screen>('loading');
   const [prevStage, setPrevStage] = useState<GrowthStage | null>(null);
-  const [showRename, setShowRename] = useState(false);   // ← lifted here
+  const [showRename, setShowRename] = useState(false);
+  const [showEcosystem, setShowEcosystem] = useState(false);
 
   // Resolve initial screen once data loads
   useEffect(() => {
@@ -77,6 +79,9 @@ export default function App() {
     setScreen('home');
   };
 
+  const handleOpenEcosystem  = () => setShowEcosystem(true);
+  const handleCloseEcosystem = () => setShowEcosystem(false);
+
   // Name modal — onSave only updates the name; the modal drives its own exit animation
   // and calls onClose() when the animation completes (avoids AnimatePresence safeToRemove issues)
   const handleRenameSave = (name: string) => {
@@ -114,6 +119,7 @@ export default function App() {
             hoursAway={hoursAway}
             onWater={handleWater}
             onOpenRename={() => setShowRename(true)}
+            onExploreTree={handleOpenEcosystem}
           />
         )}
 
@@ -172,6 +178,18 @@ export default function App() {
             key="install"
             onInstall={promptInstall}
             onDismiss={dismissPrompt}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Tree ecosystem overlay ───────────────────────── */}
+      <AnimatePresence>
+        {showEcosystem && garden && (
+          <TreeEcosystem
+            key="ecosystem"
+            stage={garden.stage}
+            maturity={getTreeMaturity(garden.wateringCount)}
+            onClose={handleCloseEcosystem}
           />
         )}
       </AnimatePresence>

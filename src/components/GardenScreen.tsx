@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GardenState, STAGE_LABELS, PassiveElement } from '@/types/garden';
 import PlantDisplay from './PlantDisplay';
@@ -105,10 +104,10 @@ interface Props {
   onWater: () => void;
   onOpenRename: () => void;
   hoursAway: number;
+  onExploreTree?: () => void;
 }
 
-export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway }: Props) {
-  const [isZooming, setIsZooming] = useState(false);
+export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway, onExploreTree }: Props) {
 
   const lastText      = formatLastWatered(garden.lastWatered);
   const toNext        = wateringsUntilNextStage(garden);
@@ -156,9 +155,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
   // ── Button behaviour ───────────────────────────────────────────────────────
   const handleButtonPress = () => {
     if (reachedDailyMax) {
-      // "Ver crecer" — zoom in to appreciate flowers, birds, details, then return
-      setIsZooming(true);
-      setTimeout(() => setIsZooming(false), 2800); // 0.7s in + ~2s hold + 1s out
+      onExploreTree?.();
     } else {
       onWater();
     }
@@ -314,27 +311,17 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway 
             )}
           </AnimatePresence>
 
-          {/* Main plant — two layers: outer motion.div scales, inner div floats.
-               CSS @keyframes wins over inline style so they MUST be separate. */}
-          <motion.div
-            className="z-10"
-            animate={{ scale: isZooming ? 1.45 : 1 }}
-            transition={isZooming
-              ? { type: 'spring', stiffness: 180, damping: 18 }
-              : { duration: 1.0, ease: 'easeInOut' }
-            }
+          {/* Main plant */}
+          <div
+            className="plant-float z-10"
+            style={p.plantGlow ? { filter: `drop-shadow(${p.plantGlow})` } : undefined}
           >
-            <div
-              className="plant-float"
-              style={p.plantGlow ? { filter: `drop-shadow(${p.plantGlow})` } : undefined}
-            >
-              <PlantDisplay
-                stage={garden.stage}
-                size={220}
-                maturity={treeMaturity}
-              />
-            </div>
-          </motion.div>
+            <PlantDisplay
+              stage={garden.stage}
+              size={220}
+              maturity={treeMaturity}
+            />
+          </div>
         </div>
 
         {/* Thin separator */}
