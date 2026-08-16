@@ -187,6 +187,7 @@ export default function App() {
         {showExplore && garden && (
           <VerticalWorld
             key="explore"
+            stage={garden.stage}
             maturity={getTreeMaturity(garden.wateringCount)}
             onClose={handleCloseExplore}
           />

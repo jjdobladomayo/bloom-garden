@@ -1,11 +1,13 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { TreeMaturity } from '@/types/garden';
+import { TreeMaturity, GrowthStage } from '@/types/garden';
 import { useSeasonOfYear } from '@/hooks/useSeasonOfYear';
 import { useTimeOfDay, TimeOfDay } from '@/hooks/useTimeOfDay';
+import PlantDisplay from './PlantDisplay';
 
 interface Props {
+  stage: GrowthStage;
   maturity: TreeMaturity;
   onClose: () => void;
 }
@@ -28,7 +30,7 @@ const SOIL = {
   stone:    '#706050',
 };
 
-export default function VerticalWorld({ maturity, onClose }: Props) {
+export default function VerticalWorld({ stage, maturity, onClose }: Props) {
   const season    = useSeasonOfYear();
   const timeOfDay = useTimeOfDay();
   const sky       = SKY_COLORS[timeOfDay];
@@ -255,31 +257,20 @@ export default function VerticalWorld({ maturity, onClose }: Props) {
           </div>
         ))}
 
-        {/* ── Crown of the tree peeking at the bottom ── */}
+        {/* ── Real plant crown — same tree as the garden ── */}
+        {/* marginBottom -90 hides the trunk/ground; only the crown peeks above the horizon */}
         <div className="absolute inset-x-0 bottom-0 flex justify-center items-end pointer-events-none">
-          <svg width="260" height="140" viewBox="0 0 260 140" fill="none">
-            <ellipse cx="130" cy="100" rx="100" ry="45" fill="#3d7a3b" opacity="0.7" />
-            <ellipse cx="130" cy="80"  rx="84"  ry="52" fill="#4a8c48" opacity="0.8" />
-            <ellipse cx="130" cy="60"  rx="70"  ry="48" fill="#5a9c58" />
-            <ellipse cx="130" cy="42"  rx="54"  ry="40" fill="#7cb87a" />
-            <ellipse cx="130" cy="26"  rx="40"  ry="32" fill="#8dc88b" />
-            <ellipse cx="120" cy="18"  rx="22"  ry="16" fill="#a8d8a5" opacity="0.6" />
-            {/* small flowers in crown */}
-            {(season === 'spring' || season === 'summer') && <>
-              <circle cx="108" cy="24" r="5" fill="#fde8b0" />
-              <circle cx="108" cy="24" r="3" fill="#f5a623" />
-              <circle cx="152" cy="30" r="4" fill="#ffd1dc" />
-              <circle cx="152" cy="30" r="2.5" fill="#f08080" />
-            </>}
-          </svg>
+          <div style={{ marginBottom: -90 }}>
+            <PlantDisplay stage={stage} size={260} maturity={maturity} />
+          </div>
         </div>
 
-        {/* Hint text */}
+        {/* Hint text — positioned above the crown so it's always readable */}
         <motion.div
           animate={{ opacity: [0.4, 0.7, 0.4] }}
           transition={{ duration: 3, repeat: Infinity }}
-          className="absolute bottom-4 inset-x-0 text-center text-xs pointer-events-none"
-          style={{ color: sky.text, letterSpacing: '0.1em' }}
+          className="absolute inset-x-0 text-center text-xs pointer-events-none"
+          style={{ bottom: '22%', color: sky.text, letterSpacing: '0.1em' }}
         >
           desliza hacia abajo ↓
         </motion.div>
