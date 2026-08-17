@@ -47,6 +47,8 @@ export interface GardenState {
   newPassiveElements: PassiveElement[];
   /** A new seedling that appears once the main plant becomes a tree */
   secondaryPlant?: SecondaryPlant;
+  /** All unlocked milestones, stored permanently */
+  milestones?: Milestone[];
   /** How many times watered today (0–5). Resets each calendar day. */
   dailyWateringCount: number;
   /** UTC day index (Date.now()/86400000 floored) — used to detect day rollover */
@@ -72,6 +74,25 @@ export const STAGE_EMOJIS: Record<GrowthStage, string> = {
   large: '🌳',
   tree: '🌲',
 };
+
+// ─── Milestones ──────────────────────────────────────────────────────────────
+
+export type MilestoneId =
+  // Time-based
+  | 'week_1' | 'month_1' | 'first_season' | 'first_winter' | 'year_1'
+  // Growth
+  | 'became_tree'
+  | 'first_nest' | 'first_owl' | 'first_squirrel' | 'first_firefly'
+  // Passive element firsts
+  | 'first_butterfly' | 'first_bird' | 'first_mushroom' | 'first_snail'
+  | 'first_hedgehog' | 'first_lizard' | 'first_snowflake' | 'first_tulip' | 'first_acorn'
+  // Special events
+  | 'first_puddle' | 'secondary_plant' | 'first_night_water' | 'first_dawn_water';
+
+export interface Milestone {
+  id: MilestoneId;
+  unlockedAt: number;
+}
 
 export const STAGE_ORDER: GrowthStage[] = [
   'seed',

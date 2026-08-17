@@ -190,7 +190,7 @@ const SEASON_ES: Record<SeasonKey, string> = {
   winter: 'invierno',
 };
 
-function seasonKeyAt(ts: number): SeasonKey {
+export function seasonKeyAt(ts: number): SeasonKey {
   const d   = new Date(ts);
   const m   = d.getMonth();  // 0-11
   const day = d.getDate();

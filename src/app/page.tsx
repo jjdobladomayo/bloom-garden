@@ -12,9 +12,12 @@ import PassiveGrowthModal from '@/components/PassiveGrowthModal';
 import BloomMoment from '@/components/BloomMoment';
 import NamePlantModal from '@/components/NamePlantModal';
 import InstallPrompt from '@/components/InstallPrompt';
+import MilestoneScreen from '@/components/MilestoneScreen';
+import MemoriasScreen from '@/components/MemoriasScreen';
 import { GrowthStage } from '@/types/garden';
 import { wateredToday, getTreeMaturity } from '@/utils/garden';
 import TreeEcosystem from '@/components/TreeEcosystem';
+import { MILESTONE_META } from '@/utils/milestones';
 
 type Screen = 'loading' | 'welcome' | 'home' | 'watering' | 'moment' | 'growth';
 
@@ -28,14 +31,27 @@ export default function App() {
     completeWatering,
     dismissPassiveGrowth,
     updatePlantName,
+    pendingMilestone,
+    consumeMilestone,
   } = useGarden();
 
   const { showPrompt, promptInstall, dismissPrompt } = usePWA();
 
-  const [screen, setScreen] = useState<Screen>('loading');
-  const [prevStage, setPrevStage] = useState<GrowthStage | null>(null);
-  const [showRename, setShowRename] = useState(false);
+  const [screen, setScreen]           = useState<Screen>('loading');
+  const [prevStage, setPrevStage]     = useState<GrowthStage | null>(null);
+  const [showRename, setShowRename]   = useState(false);
   const [showEcosystem, setShowEcosystem] = useState(false);
+  const [showMemorias, setShowMemorias]   = useState(false);
+
+  // --- Milestone overlay: shows when back on home and a pending important milestone exists ---
+  const [milestoneVisible, setMilestoneVisible] = useState(false);
+
+  useEffect(() => {
+    if (screen === 'home' && pendingMilestone && MILESTONE_META[pendingMilestone]?.important) {
+      const t = setTimeout(() => setMilestoneVisible(true), 700);
+      return () => clearTimeout(t);
+    }
+  }, [screen, pendingMilestone]);
 
   // Resolve initial screen once data loads
   useEffect(() => {
@@ -54,8 +70,6 @@ export default function App() {
   const handleWater = () => setScreen('watering');
 
   const handleWateringComplete = () => {
-    // Extra waterings (already watered today) skip BloomMoment and return home directly.
-    // The daily phrase on GardenScreen is the contemplation reward.
     const isExtra = garden ? wateredToday(garden) : false;
     if (garden) setPrevStage(garden.stage);
     completeWatering();
@@ -64,10 +78,9 @@ export default function App() {
 
   const handleWateringCancel = () => setScreen('home');
 
-  // Called automatically after the BloomMoment resolves
   const handleMomentComplete = () => {
     if (prevStage !== null && garden && garden.stage !== prevStage) {
-      setScreen('growth'); // Level-up → celebratory screen
+      setScreen('growth');
     } else {
       setPrevStage(null);
       setScreen('home');
@@ -79,11 +92,22 @@ export default function App() {
     setScreen('home');
   };
 
+  // Milestone overlay
+  const handleMilestoneClose = () => {
+    setMilestoneVisible(false);
+    // Wait for exit animation, then consume from queue
+    setTimeout(() => consumeMilestone(), 500);
+  };
+
+  // Ecosystem
   const handleOpenEcosystem  = () => setShowEcosystem(true);
   const handleCloseEcosystem = () => setShowEcosystem(false);
 
-  // Name modal — onSave only updates the name; the modal drives its own exit animation
-  // and calls onClose() when the animation completes (avoids AnimatePresence safeToRemove issues)
+  // Memorias
+  const handleOpenMemorias  = () => setShowMemorias(true);
+  const handleCloseMemorias = () => setShowMemorias(false);
+
+  // Name modal
   const handleRenameSave = (name: string) => {
     updatePlantName(name);
   };
@@ -120,6 +144,7 @@ export default function App() {
             onWater={handleWater}
             onOpenRename={() => setShowRename(true)}
             onExploreTree={handleOpenEcosystem}
+            onOpenMemorias={handleOpenMemorias}
           />
         )}
 
@@ -162,7 +187,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Name modal — self-contained exit animation; AnimatePresence not needed here */}
+      {/* Name modal */}
       {showRename && garden && (
         <NamePlantModal
           key="rename"
@@ -190,6 +215,31 @@ export default function App() {
             stage={garden.stage}
             maturity={getTreeMaturity(garden.wateringCount)}
             onClose={handleCloseEcosystem}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Milestone moment overlay ─────────────────────── */}
+      <AnimatePresence>
+        {milestoneVisible && pendingMilestone && garden && (
+          <MilestoneScreen
+            key={`milestone-${pendingMilestone}`}
+            milestoneId={pendingMilestone}
+            unlockedAt={
+              garden.milestones?.find((m) => m.id === pendingMilestone)?.unlockedAt
+            }
+            onClose={handleMilestoneClose}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Memorias screen ──────────────────────────────── */}
+      <AnimatePresence>
+        {showMemorias && garden && (
+          <MemoriasScreen
+            key="memorias"
+            milestones={garden.milestones ?? []}
+            onClose={handleCloseMemorias}
           />
         )}
       </AnimatePresence>

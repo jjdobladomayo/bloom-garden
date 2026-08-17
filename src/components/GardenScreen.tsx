@@ -117,9 +117,10 @@ interface Props {
   onOpenRename: () => void;
   hoursAway: number;
   onExploreTree?: () => void;
+  onOpenMemorias?: () => void;
 }
 
-export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway, onExploreTree }: Props) {
+export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway, onExploreTree, onOpenMemorias }: Props) {
 
   const lastText      = formatLastWatered(garden.lastWatered);
   const toNext        = wateringsUntilNextStage(garden);
@@ -368,11 +369,19 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway,
           )}
 
           <div className="flex items-center gap-5 flex-wrap justify-center">
-            {/* Garden age — always present */}
-            <div className="flex items-center gap-1 text-xs" style={{ color: c.stat }}>
+            {/* Garden age — tappable → opens Memorias */}
+            <button
+              className="flex items-center gap-1 text-xs active:opacity-60 transition-opacity"
+              style={{ color: c.stat }}
+              onClick={onOpenMemorias}
+              aria-label="Ver memorias del jardín"
+            >
               <span>🌱</span>
               <span>{ageLabel}</span>
-            </div>
+              {(garden.milestones?.length ?? 0) > 0 && (
+                <span style={{ fontSize: '0.6rem', color: c.green, marginLeft: 1 }}>●</span>
+              )}
+            </button>
 
             {/* Seasons lived — appears after first season change */}
             {seasonsLabel && (
