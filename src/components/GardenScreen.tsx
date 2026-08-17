@@ -90,13 +90,25 @@ const PALETTES: Record<TimeOfDay, Palette> = {
 };
 
 const PASSIVE_EMOJIS: Record<string, string> = {
-  leaf: '🍃',
-  flower: '🌸',
-  butterfly: '🦋',
-  bird: '🐦',
-  stone: '🪨',
-  mushroom: '🍄',
-  dewdrop: '💧',
+  // All-season
+  leaf:        '🍃',
+  flower:      '🌸',
+  butterfly:   '🦋',
+  bird:        '🐦',
+  stone:       '🪨',
+  mushroom:    '🍄',
+  dewdrop:     '💧',
+  // New creatures
+  snail:       '🐌',
+  worm:        '🪱',
+  clover:      '🍀',
+  hedgehog:    '🦔',
+  lizard:      '🦎',
+  acorn:       '🌰',
+  // Seasonal atmosphere
+  tulip:       '🌷',
+  autumn_leaf: '🍂',
+  snowflake:   '❄️',
 };
 
 interface Props {
@@ -467,7 +479,7 @@ function PassiveElementDot({ element }: { element: PassiveElement }) {
         left: `${element.position.x}%`,
         bottom: `${100 - element.position.y}%`,
         transform: 'translate(-50%, 50%)',
-        zIndex: element.type === 'bird' || element.type === 'butterfly' ? 20 : 16,
+        zIndex: ['bird', 'butterfly', 'snowflake', 'autumn_leaf'].includes(element.type) ? 20 : 16,
       }}
     >
       {PASSIVE_EMOJIS[element.type] ?? '🌿'}

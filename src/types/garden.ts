@@ -1,13 +1,16 @@
 export type GrowthStage = 'seed' | 'sprout' | 'small' | 'medium' | 'large' | 'tree';
 
 export type PassiveElementType =
-  | 'leaf'
-  | 'flower'
-  | 'butterfly'
-  | 'bird'
-  | 'stone'
-  | 'mushroom'
-  | 'dewdrop';
+  // Ground — near trunk (all seasons)
+  | 'leaf'       | 'flower'    | 'stone'   | 'mushroom' | 'dewdrop'
+  // Aerial (all seasons)
+  | 'butterfly'  | 'bird'
+  // New ground creatures
+  | 'snail'      | 'worm'      | 'clover'  | 'hedgehog' | 'lizard'
+  // Stage-gated
+  | 'acorn'
+  // Seasonal atmosphere
+  | 'tulip'      | 'autumn_leaf' | 'snowflake';
 
 export interface PassiveElement {
   type: PassiveElementType;

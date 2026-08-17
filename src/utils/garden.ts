@@ -75,45 +75,80 @@ export const TREE_MATURITY_LABELS: Record<TreeMaturity, string> = {
 
 // ─── Passive growth ────────────────────────────────────────────────────────
 
-const ALL_TYPES: PassiveElementType[] = [
-  'leaf', 'flower', 'butterfly', 'bird', 'stone', 'mushroom', 'dewdrop',
-];
-
 function rand(min: number, max: number) {
   return Math.random() * (max - min) + min;
 }
 
-// y is "distance from top of the scene container" (0=top, 100=bottom).
-// PassiveElementDot uses  bottom: (100 - y)%  so:
-//   high y → near the bottom (ground level)
-//   low  y → near the top (flying / mid-air)
+// y: distance from top (0=top, 100=bottom).
+// PassiveElementDot uses  bottom: (100 - y)%  → high y = ground, low y = sky.
 const TYPE_Y_RANGE: Record<PassiveElementType, [number, number]> = {
-  stone:     [82, 92],  // always on the ground
-  mushroom:  [78, 90],  // grows at ground level
-  flower:    [74, 88],  // at ground / low on stem
-  dewdrop:   [76, 88],  // near ground
-  leaf:      [60, 82],  // can tumble a bit higher (falling leaf)
-  butterfly: [38, 68],  // flying mid-height
-  bird:      [32, 62],  // flying, can be quite high
+  stone:       [82, 92],
+  mushroom:    [78, 90],
+  flower:      [74, 88],
+  dewdrop:     [76, 88],
+  leaf:        [60, 82],
+  butterfly:   [38, 68],
+  bird:        [32, 62],
+  snail:       [81, 90],
+  worm:        [83, 90],
+  clover:      [74, 88],
+  hedgehog:    [80, 90],
+  lizard:      [70, 80],
+  acorn:       [82, 90],
+  tulip:       [72, 86],
+  autumn_leaf: [60, 82],
+  snowflake:   [35, 70],
 };
 
-// x is distance from left edge (0–100). Trunk is at 50%.
-// Ground elements cluster near the trunk; aerial elements roam freely.
+// x: 0=left, 100=right. Trunk at 50%.
+// Ground elements cluster near trunk; aerial ones roam freely.
 const TYPE_X_RANGE: Record<PassiveElementType, [number, number]> = {
-  stone:     [38, 62],  // tight — right at trunk base
-  mushroom:  [33, 67],  // just outside stone zone
-  flower:    [30, 70],  // slightly wider, still anchored to trunk area
-  dewdrop:   [38, 62],  // near drip zone of leaves
-  leaf:      [20, 80],  // can drift further (falling)
-  butterfly: [12, 88],  // free to roam
-  bird:      [12, 88],  // free to roam
+  stone:       [38, 62],
+  mushroom:    [33, 67],
+  flower:      [30, 70],
+  dewdrop:     [38, 62],
+  leaf:        [20, 80],
+  butterfly:   [12, 88],
+  bird:        [12, 88],
+  snail:       [35, 65],
+  worm:        [40, 60],
+  clover:      [30, 68],
+  hedgehog:    [35, 65],
+  lizard:      [42, 58],
+  acorn:       [38, 62],
+  tulip:       [30, 70],
+  autumn_leaf: [20, 80],
+  snowflake:   [15, 85],
 };
 
-export function generatePassiveElements(hoursAway: number): PassiveElement[] {
+// Seasonal pools — which types can appear each season.
+// Richer in spring/summer; sparser and moodier in autumn/winter.
+const SEASONAL_POOL: Record<SeasonKey, PassiveElementType[]> = {
+  spring: ['leaf', 'flower', 'butterfly', 'bird', 'dewdrop', 'stone',
+           'tulip', 'clover', 'worm', 'snail', 'mushroom'],
+  summer: ['butterfly', 'bird', 'flower', 'dewdrop', 'stone', 'leaf',
+           'lizard', 'worm', 'clover'],
+  autumn: ['autumn_leaf', 'mushroom', 'stone', 'bird', 'dewdrop',
+           'acorn', 'snail', 'hedgehog'],
+  winter: ['stone', 'dewdrop', 'mushroom', 'bird', 'snowflake'],
+};
+
+export function generatePassiveElements(
+  hoursAway: number,
+  stage: GrowthStage = 'seed',
+): PassiveElement[] {
   if (hoursAway < 3) return [];
   const count = Math.min(Math.floor(hoursAway / 4) + 1, 3);
+  const season = seasonKeyAt(Date.now());
+
+  // Start with the seasonal pool, then filter by stage where needed
+  let pool: PassiveElementType[] = [...SEASONAL_POOL[season]];
+  if (stage !== 'tree')                                     pool = pool.filter(t => t !== 'acorn');
+  if (!['medium','large','tree'].includes(stage))           pool = pool.filter(t => t !== 'lizard');
+  if (pool.length === 0) pool = ['stone', 'dewdrop'];       // fallback safety
+
   return Array.from({ length: count }, (_, i) => {
-    const type = ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
+    const type = pool[Math.floor(Math.random() * pool.length)];
     const [yMin, yMax] = TYPE_Y_RANGE[type];
     const [xMin, xMax] = TYPE_X_RANGE[type];
     return {
@@ -351,7 +386,7 @@ export function processReturn(state: GardenState): {
   const today  = Math.floor(now / 86_400_000);
   const hoursAway = (now - state.lastOpenedAt) / 3_600_000;
 
-  const newElements  = generatePassiveElements(hoursAway);
+  const newElements  = generatePassiveElements(hoursAway, state.stage);
   const allElements  = [...state.passiveElements, ...newElements].slice(-8);
 
   // Evaporate puddle if time has passed
