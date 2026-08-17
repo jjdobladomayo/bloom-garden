@@ -133,19 +133,50 @@ const SEASONAL_POOL: Record<SeasonKey, PassiveElementType[]> = {
   winter: ['stone', 'dewdrop', 'mushroom', 'bird', 'snowflake'],
 };
 
+// Time-of-day slots: derived from the real clock hour.
+type TimeSlot = 'night' | 'dawn' | 'day' | 'evening';
+
+function timeSlotNow(): TimeSlot {
+  const h = new Date().getHours();
+  if (h >= 21 || h < 5)  return 'night';   // 21:00 – 04:59
+  if (h >= 5  && h < 8)  return 'dawn';    // 05:00 – 07:59
+  if (h >= 8  && h < 19) return 'day';     // 08:00 – 18:59
+  return 'evening';                         // 19:00 – 20:59
+}
+
+// Elements restricted to specific time slots.
+// Elements NOT listed here can appear at any hour.
+const TIME_RESTRICTIONS: Partial<Record<PassiveElementType, TimeSlot[]>> = {
+  hedgehog:  ['night'],              // nocturnal — only at night
+  dewdrop:   ['dawn'],               // forms overnight, gone by mid-morning
+  butterfly: ['day'],                // needs warm light
+  bird:      ['dawn', 'day', 'evening'], // never at night
+  lizard:    ['day'],                // cold-blooded, needs full sun
+};
+
 export function generatePassiveElements(
   hoursAway: number,
   stage: GrowthStage = 'seed',
 ): PassiveElement[] {
   if (hoursAway < 3) return [];
-  const count = Math.min(Math.floor(hoursAway / 4) + 1, 3);
+  const count  = Math.min(Math.floor(hoursAway / 4) + 1, 3);
   const season = seasonKeyAt(Date.now());
+  const slot   = timeSlotNow();
 
-  // Start with the seasonal pool, then filter by stage where needed
+  // 1. Season filter
   let pool: PassiveElementType[] = [...SEASONAL_POOL[season]];
-  if (stage !== 'tree')                                     pool = pool.filter(t => t !== 'acorn');
-  if (!['medium','large','tree'].includes(stage))           pool = pool.filter(t => t !== 'lizard');
-  if (pool.length === 0) pool = ['stone', 'dewdrop'];       // fallback safety
+
+  // 2. Stage filter
+  if (stage !== 'tree')                            pool = pool.filter(t => t !== 'acorn');
+  if (!['medium','large','tree'].includes(stage))  pool = pool.filter(t => t !== 'lizard');
+
+  // 3. Time-of-day filter — only keep elements allowed at this hour
+  pool = pool.filter(t => {
+    const allowed = TIME_RESTRICTIONS[t];
+    return !allowed || allowed.includes(slot);
+  });
+
+  if (pool.length === 0) pool = ['stone', 'leaf']; // fallback safety
 
   return Array.from({ length: count }, (_, i) => {
     const type = pool[Math.floor(Math.random() * pool.length)];
