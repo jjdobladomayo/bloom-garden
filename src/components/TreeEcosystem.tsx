@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import PlantDisplay from './PlantDisplay';
-import { GrowthStage, PassiveElement, PassiveElementType, TreeMaturity } from '@/types/garden';
+import { GrowthStage, PassiveElement, PassiveElementType, Puddle, TreeMaturity } from '@/types/garden';
 import { ELEMENT_LORE } from '@/data/elementLore';
 import { useTimeOfDay, TimeOfDay } from '@/hooks/useTimeOfDay';
 
@@ -266,9 +266,10 @@ interface Props {
   maturity: TreeMaturity;
   onClose: () => void;
   passiveElements?: PassiveElement[];
+  puddle?: Puddle;
 }
 
-export default function TreeEcosystem({ stage, maturity, onClose, passiveElements = [] }: Props) {
+export default function TreeEcosystem({ stage, maturity, onClose, passiveElements = [], puddle }: Props) {
   const timeOfDay = useTimeOfDay();
   const bg        = BG[timeOfDay];
   const ground    = GROUND_COLOR[timeOfDay];
@@ -282,12 +283,20 @@ export default function TreeEcosystem({ stage, maturity, onClose, passiveElement
   // Belt-and-suspenders: never render nocturnal creatures outside night/evening,
   // regardless of how they ended up in the array.
   const NOCTURNAL_BASE_IDS = new Set(['bat', 'beetle', 'spider', 'hedgehog', 'cricket', 'owl']);
-  const creatures = [...hardcoded, ...real].filter(c => {
+  const allCreatures = [...hardcoded, ...real].filter(c => {
     if (isNight || isEvening) return true;
-    // Strip numeric suffix + 'real_' prefix to get base id
     const base = c.id.replace(/^real_/, '').replace(/\d+$/, '');
     return !NOCTURNAL_BASE_IDS.has(base);
   });
+
+  // Puddle creatures — appear when an active puddle exists
+  const hasPuddle = !!puddle && puddle.evaporatesAt > Date.now();
+  if (hasPuddle) {
+    allCreatures.push({ id: 'puddle_frog',   emoji: '🐸', left: '38%', top: '87%', animY: 3, delay: 1.2, duration: 4.0 });
+    allCreatures.push({ id: 'puddle_turtle', emoji: '🐢', left: '61%', top: '88%', animY: 2, delay: 1.6, duration: 5.2 });
+  }
+
+  const creatures = allCreatures;
 
   return (
     <motion.div
