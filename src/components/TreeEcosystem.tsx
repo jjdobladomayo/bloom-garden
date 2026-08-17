@@ -329,6 +329,29 @@ export default function TreeEcosystem({ stage, maturity, onClose, passiveElement
           <PlantDisplay stage={stage} size={300} maturity={maturity} />
         </motion.div>
 
+        {/* Puddle SVG — shown when charco is active */}
+        {hasPuddle && (
+          <motion.div
+            initial={{ opacity: 0, scaleX: 0.2 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            exit={{ opacity: 0, scaleX: 0.2 }}
+            transition={{ delay: 0.6, duration: 1.4, ease: 'easeOut' }}
+            className="absolute pointer-events-none"
+            style={{ bottom: '13%', left: '50%', transform: 'translateX(-20%)', zIndex: 8 }}
+          >
+            <svg width="160" height="48" viewBox="0 0 160 48" fill="none">
+              {/* Puddle water */}
+              <ellipse cx="68" cy="36" rx="56" ry="11" fill="#93c5fd" opacity="0.4" />
+              <ellipse cx="68" cy="33" rx="46" ry="8"  fill="#bfdbfe" opacity="0.55" />
+              {/* Shimmer lines */}
+              <path d="M38 32 Q50 29 62 32" stroke="#e0f2fe" strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
+              <path d="M72 34 Q80 31 88 34" stroke="#e0f2fe" strokeWidth="1.0" strokeLinecap="round" opacity="0.6" />
+              {/* Ripple ring */}
+              <ellipse cx="68" cy="36" rx="56" ry="11" stroke="#7dd3fc" strokeWidth="0.8" opacity="0.3" fill="none" />
+            </svg>
+          </motion.div>
+        )}
+
         {/* All creatures */}
         {creatures.map((c) => (
           <motion.span
