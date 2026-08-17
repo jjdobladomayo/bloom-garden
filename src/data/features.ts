@@ -15,13 +15,37 @@ export interface Feature {
 
 export const FEATURES: Feature[] = [
   {
+    id: 'lupa',
+    emoji: '🔍',
+    title: 'El jardín es un libro',
+    description:
+      'Toca cualquier elemento del ecosistema — la seta, el caracol, la mariposa, el erizo — y el jardín te cuenta algo sobre él. Cada criatura tiene su historia, su momento y su razón de estar aquí.',
+    date: 'agosto 2025',
+    isNew: true,
+    bg: '#f5f0eb',
+    titleColor: '#3a2810',
+    subColor: '#8b7355',
+  },
+  {
+    id: 'narrative',
+    emoji: '📖',
+    title: 'Lo que pasó hoy',
+    description:
+      'Cuando has regado los cinco, el jardín te cuenta lo que ocurrió mientras no estabas. Un párrafo distinto cada día, escrito a partir de la hora, la estación y lo que vive en tu árbol. Razón para volver aunque no queden riegos.',
+    date: 'agosto 2025',
+    isNew: true,
+    bg: '#f0edf8',
+    titleColor: '#2a1a4a',
+    subColor: '#7060b0',
+  },
+  {
     id: 'memoria-tiempo',
     emoji: '🪺',
     title: 'Memoria y tiempo',
     description:
       'El jardín tiene hitos. El primer nido. El primer búho de noche. Las primeras luciérnagas. El primer invierno. Momentos que solo ocurren una vez y quedan guardados para siempre.',
     date: 'agosto 2025',
-    isNew: true,
+    isNew: false,
     bg: '#fef3e6',
     titleColor: '#4a2c0a',
     subColor: '#c4956a',
@@ -33,7 +57,7 @@ export const FEATURES: Feature[] = [
     description:
       'Cuando el árbol crece, no está solo. Hormigas que trepan por el tronco, mariposas que pasan, un búho que llega de noche, luciérnagas en los árboles más viejos. Todo depende de la madurez y la hora.',
     date: 'agosto 2025',
-    isNew: true,
+    isNew: false,
     bg: '#eff9f4',
     titleColor: '#1a3a2a',
     subColor: '#7ca48c',
@@ -45,7 +69,7 @@ export const FEATURES: Feature[] = [
     description:
       'Mientras no estás, el jardín no se queda quieto. Al volver puede haber una seta junto al tronco, un caracol, un copo de nieve o un tulipán de primavera. Cada estación trae sus propias sorpresas.',
     date: 'agosto 2025',
-    isNew: true,
+    isNew: false,
     bg: '#f5eef8',
     titleColor: '#4a1a5a',
     subColor: '#9868a8',
