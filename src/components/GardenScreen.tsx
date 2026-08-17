@@ -1,10 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GardenState, STAGE_LABELS, PassiveElement } from '@/types/garden';
 import PlantDisplay from './PlantDisplay';
 import StarField from './StarField';
 import SeasonalElements from './SeasonalElements';
+import ElementSheet from './ElementSheet';
+import NarrativeCard from './NarrativeCard';
 import {
   formatLastWatered,
   wateringsUntilNextStage,
@@ -19,6 +22,7 @@ import {
   getGardenAgeLabel,
   getSeasonsLivedLabel,
 } from '@/utils/garden';
+import { getDailyNarrative } from '@/utils/narrative';
 import { useBloomMessage } from '@/hooks/useBloomMessage';
 import { useTimeOfDay, TimeOfDay } from '@/hooks/useTimeOfDay';
 import { useSeasonOfYear } from '@/hooks/useSeasonOfYear';
@@ -122,6 +126,8 @@ interface Props {
 
 export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway, onExploreTree, onOpenMemorias }: Props) {
 
+  const [activeElement, setActiveElement] = useState<PassiveElement | null>(null);
+
   const lastText      = formatLastWatered(garden.lastWatered);
   const toNext        = wateringsUntilNextStage(garden);
   const stageProgress = getStageProgress(garden);
@@ -138,6 +144,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway,
   const alreadyWatered  = wateredToday(garden);              // 1+ waterings today
   const reachedDailyMax = !canWaterMore(garden);             // exactly 5 today
   const dailyPhrase     = alreadyWatered ? getDailyPhrase(season, garden.createdAt ?? garden.lastOpenedAt) : null;
+  const narrative       = reachedDailyMax ? getDailyNarrative(garden, timeOfDay) : null;
 
   // ── Tree maturity ──────────────────────────────────────────────────────────
   const treeMaturity  = getTreeMaturity(garden.wateringCount);
@@ -268,7 +275,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway,
         <div className="relative flex items-end justify-center w-full" style={{ minHeight: 260 }}>
           <AnimatePresence>
             {garden.passiveElements.slice(-5).map((el) => (
-              <PassiveElementDot key={el.id} element={el} />
+              <PassiveElementDot key={el.id} element={el} onTap={() => setActiveElement(el)} />
             ))}
           </AnimatePresence>
 
@@ -439,6 +446,13 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway,
 
       {/* ── Bottom CTA ──────────────────────────────────── */}
       <div className="px-6 pt-2 pb-10" style={{ position: 'relative', zIndex: 2 }}>
+        {/* Concepto C — narrative card, only when daily waterings done */}
+        <AnimatePresence>
+          {narrative && (
+            <NarrativeCard key="narrative" text={narrative} dark={dark} />
+          )}
+        </AnimatePresence>
+
         <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -483,26 +497,40 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway,
           novedades →
         </motion.a>
       </div>
+
+      {/* ── Concepto A — element inspection sheet ───────── */}
+      <ElementSheet
+        element={activeElement}
+        onClose={() => setActiveElement(null)}
+        dark={dark}
+      />
     </motion.div>
   );
 }
 
-function PassiveElementDot({ element }: { element: PassiveElement }) {
+function PassiveElementDot({ element, onTap }: { element: PassiveElement; onTap: () => void }) {
   return (
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 150 }}
-      className="absolute text-xl pointer-events-none"
+      whileTap={{ scale: 0.82 }}
+      onClick={onTap}
+      className="absolute cursor-pointer"
       style={{
         left: `${element.position.x}%`,
         bottom: `${100 - element.position.y}%`,
         transform: 'translate(-50%, 50%)',
         zIndex: ['bird', 'butterfly', 'snowflake', 'autumn_leaf'].includes(element.type) ? 20 : 16,
+        // Extended transparent tap area for mobile
+        padding: '10px',
+        touchAction: 'manipulation',
       }}
     >
-      {PASSIVE_EMOJIS[element.type] ?? '🌿'}
+      <span style={{ fontSize: '1.25rem', display: 'block', lineHeight: 1 }}>
+        {PASSIVE_EMOJIS[element.type] ?? '🌿'}
+      </span>
     </motion.div>
   );
 }
