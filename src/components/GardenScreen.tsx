@@ -471,6 +471,17 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway,
               : null
           }
         </motion.p>
+
+        <motion.a
+          href="/novedades"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.0 }}
+          className="block text-center text-xs mt-2 no-underline active:opacity-40 transition-opacity"
+          style={{ color: c.muted, opacity: 0.55, textDecoration: 'none' }}
+        >
+          novedades →
+        </motion.a>
       </div>
     </motion.div>
   );

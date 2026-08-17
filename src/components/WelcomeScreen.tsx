@@ -142,6 +142,18 @@ export default function WelcomeScreen({ onStart }: Props) {
             >
               Sin registro · Sin anuncios · Solo tú y tu planta
             </motion.p>
+
+            {/* Novedades link */}
+            <motion.a
+              href="/novedades"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 2.3 }}
+              className="mt-4 text-xs tracking-widest no-underline active:opacity-50 transition-opacity"
+              style={{ color: '#c4b5a8', textDecoration: 'none' }}
+            >
+              novedades →
+            </motion.a>
           </motion.div>
         )}
 
