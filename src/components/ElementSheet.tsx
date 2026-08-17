@@ -88,6 +88,25 @@ export default function ElementSheet({ element, onClose, dark }: Props) {
               {lore.desc}
             </p>
 
+            {/* Fleeting badge */}
+            {element.expiresAt && (
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: '0.68rem',
+                letterSpacing: '0.06em',
+                color: '#a06820',
+                background: '#fef3e0',
+                padding: '4px 11px',
+                borderRadius: 99,
+                marginBottom: 10,
+              }}>
+                <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: '#e09040' }} />
+                Solo por unas horas
+              </div>
+            )}
+
             {/* Detail pill */}
             <div style={{
               display: 'inline-flex',

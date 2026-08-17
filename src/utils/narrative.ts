@@ -109,13 +109,95 @@ const ELEMENT_SENTENCES: Partial<Record<PassiveElementType, string[]>> = {
     'La lombriz abrió caminos para que el agua llegara a las raíces.',
     'La tierra tiene más vida de la que se ve desde arriba.',
   ],
+  bee: [
+    'La abeja volvió al jardín. No lo hace si no encuentra algo que valga la pena.',
+    'Una abeja visitó las flores varias veces hoy. Recordará este jardín.',
+  ],
+  caterpillar: [
+    'La oruga sigue comiendo. Está acumulando todo lo que va a ser después.',
+    'La oruga no tiene prisa. Sabe que lo que viene vale la espera.',
+  ],
+  feather: [
+    'Alguien dejó una pluma aquí. El pájaro ya se fue, pero algo queda.',
+    'Una pluma en el suelo. Prueba de que el árbol tiene visitas.',
+  ],
+  spiderweb: [
+    'La araña tejió su red antes del amanecer. Nadie la vio trabajar.',
+    'Hay una telaraña entre las ramas. La tejió de noche, sin luz.',
+  ],
+  moss: [
+    'El musgo lleva aquí más tiempo que el árbol. No tiene prisa por irse.',
+    'El musgo crece despacio y dura mucho. Tiene razones para los dos.',
+  ],
+  berries: [
+    'Las bayas aparecieron cuando nadie las esperaba. El árbol las produce para que alguien se las lleve.',
+    'Hay bayas en el árbol. Los pájaros lo saben antes que tú.',
+  ],
+  bat: [
+    'El murciélago lleva horas cazando insectos sobre el jardín. Silencioso, preciso.',
+    'Un murciélago pasó varias veces. El jardín le parece un buen sitio para cazar.',
+  ],
+  beetle: [
+    'El escarabajo salió cuando oscureció. Lleva así ciento ochenta millones de años.',
+    'Hay un escarabajo junto al tronco. Sale solo de noche.',
+  ],
+  spider: [
+    'La araña salió a cazar. La telaraña que tejió esta noche es su trampa.',
+    'La araña espera en el jardín. Sabe que algo pasará antes del amanecer.',
+  ],
+  shooting_star: [
+    'Una estrella fugaz cruzó el cielo sobre el jardín. Duró menos de dos segundos.',
+    'Algo se incendió en la atmósfera esta noche y lo viste desde aquí.',
+  ],
+  pawprints: [
+    'Hay huellas en el suelo. Alguien pasó de noche. No sabes quién.',
+    'Las huellas de esta mañana son la única prueba de lo que ocurrió mientras dormías.',
+  ],
+  owl: [
+    'El búho estuvo aquí. Llegó de noche y se fue antes de que nadie lo notara.',
+    'Un búho en el árbol es señal de que el jardín tiene ya cierta edad.',
+  ],
+  rabbit: [
+    'El conejo apareció al amanecer y se fue antes de que llegara el sol de lleno.',
+    'Hubo un conejo esta mañana. Lo más probable es que vuelva mañana a la misma hora.',
+  ],
+  firefly: [
+    'Las luciérnagas aparecieron unos minutos en el jardín. La oscuridad las hizo visibles.',
+    'Esta noche el jardín tuvo su propia luz. Breve, pero estaba ahí.',
+  ],
+  fox: [
+    'El zorro pasó de noche. Solo los jardines con historia los atraen.',
+    'Un zorro en invierno. Que haya venido al tuyo dice algo del jardín.',
+  ],
+  squirrel: [
+    'La ardilla encontró las bellotas. Se fue con algo — y dejó algo también.',
+    'La ardilla estuvo aquí un rato. Probablemente volverá mientras queden bellotas.',
+  ],
+  cricket: [
+    'El grillo lleva horas aquí. Lo oyes más de lo que lo ves.',
+    'Hay un grillo en el jardín esta noche. Está midiendo la temperatura con su canto.',
+  ],
+  rainbow: [
+    'Hubo un arcoíris sobre el jardín. Duró exactamente lo que tenía que durar.',
+    'El arcoíris apareció sin aviso. Eso es lo único que hace.',
+  ],
+  eagle: [
+    'Un águila pasó volando sobre el árbol. Desde arriba, lo vio todo.',
+    'El águila pasó en segundos. Pero te vio.',
+  ],
 };
 
 // Most interesting elements listed first — the first one found wins
 const ELEMENT_PRIORITY: PassiveElementType[] = [
-  'hedgehog', 'clover', 'butterfly', 'bird', 'mushroom',
-  'snail', 'dewdrop', 'tulip', 'snowflake', 'autumn_leaf',
-  'acorn', 'lizard', 'worm', 'flower', 'leaf', 'stone',
+  // Rarest / most poetic first
+  'eagle', 'shooting_star', 'fox', 'rainbow', 'firefly', 'owl', 'pawprints',
+  'squirrel', 'rabbit', 'cricket',
+  // Regular nocturnal
+  'bat', 'spider', 'hedgehog', 'beetle',
+  // Regular rare
+  'clover', 'butterfly', 'caterpillar', 'bee', 'bird', 'mushroom',
+  'spiderweb', 'berries', 'snail', 'dewdrop', 'tulip', 'snowflake', 'autumn_leaf',
+  'acorn', 'lizard', 'moss', 'feather', 'ladybug', 'worm', 'flower', 'leaf', 'stone', 'ant',
 ];
 
 // ── Closing sentences ──────────────────────────────────────────────────────

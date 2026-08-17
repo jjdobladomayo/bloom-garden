@@ -15,13 +15,37 @@ export interface Feature {
 
 export const FEATURES: Feature[] = [
   {
+    id: 'fugaces',
+    emoji: '🌠',
+    title: 'Algunos solo duran unas horas',
+    description:
+      'El búho llega de noche y se va antes de que amanezca. El conejo aparece al amanecer y desaparece en media hora. La estrella fugaz dura cinco minutos. Hay cosas en el jardín que solo existen si estás ahí en el momento exacto.',
+    date: 'agosto 2025',
+    isNew: true,
+    bg: '#0d1520',
+    titleColor: '#c8d8e8',
+    subColor: '#3a6080',
+  },
+  {
+    id: 'noche',
+    emoji: '🦇',
+    title: 'El jardín de noche es otro jardín',
+    description:
+      'Treinta y siete habitantes. Murciélagos, arañas, escarabajos, zorros, luciérnagas, grillos. Algunos solo salen de noche. Otros dejan huellas al amanecer — la única prueba de que estuvieron. El jardín no duerme.',
+    date: 'agosto 2025',
+    isNew: true,
+    bg: '#141e2e',
+    titleColor: '#8ab8d8',
+    subColor: '#2a5070',
+  },
+  {
     id: 'lupa',
     emoji: '🔍',
     title: 'El jardín es un libro',
     description:
       'Toca cualquier elemento del ecosistema — la seta, el caracol, la mariposa, el erizo — y el jardín te cuenta algo sobre él. Cada criatura tiene su historia, su momento y su razón de estar aquí.',
     date: 'agosto 2025',
-    isNew: true,
+    isNew: false,
     bg: '#f5f0eb',
     titleColor: '#3a2810',
     subColor: '#8b7355',
@@ -33,7 +57,7 @@ export const FEATURES: Feature[] = [
     description:
       'Cuando has regado los cinco, el jardín te cuenta lo que ocurrió mientras no estabas. Un párrafo distinto cada día, escrito a partir de la hora, la estación y lo que vive en tu árbol. Razón para volver aunque no queden riegos.',
     date: 'agosto 2025',
-    isNew: true,
+    isNew: false,
     bg: '#f0edf8',
     titleColor: '#2a1a4a',
     subColor: '#7060b0',

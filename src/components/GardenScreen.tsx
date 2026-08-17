@@ -21,6 +21,8 @@ import {
   getDailyPhrase,
   getGardenAgeLabel,
   getSeasonsLivedLabel,
+  TIME_RESTRICTIONS,
+  TimeSlot,
 } from '@/utils/garden';
 import { getDailyNarrative } from '@/utils/narrative';
 import { useBloomMessage } from '@/hooks/useBloomMessage';
@@ -102,7 +104,7 @@ const PASSIVE_EMOJIS: Record<string, string> = {
   stone:       '🪨',
   mushroom:    '🍄',
   dewdrop:     '💧',
-  // New creatures
+  // Ground creatures
   snail:       '🐌',
   worm:        '🪱',
   clover:      '🍀',
@@ -113,6 +115,33 @@ const PASSIVE_EMOJIS: Record<string, string> = {
   tulip:       '🌷',
   autumn_leaf: '🍂',
   snowflake:   '❄️',
+  // New regular — insects & atmosphere
+  bee:         '🐝',
+  ladybug:     '🐞',
+  ant:         '🐜',
+  caterpillar: '🐛',
+  feather:     '🪶',
+  spiderweb:   '🕸️',
+  moss:        '🌿',
+  berries:     '🫐',
+  // Nocturnal regular
+  bat:         '🦇',
+  beetle:      '🪲',
+  spider:      '🕷️',
+  // Puddle creatures
+  frog:        '🐸',
+  turtle:      '🐢',
+  // Fleeting
+  owl:         '🦉',
+  rabbit:      '🐇',
+  firefly:     '✨',
+  fox:         '🦊',
+  squirrel:    '🐿️',
+  cricket:     '🦗',
+  rainbow:     '🌈',
+  eagle:         '🦅',
+  shooting_star: '🌠',
+  pawprints:     '🐾',
 };
 
 interface Props {
@@ -156,10 +185,31 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway,
   const ageLabel     = getGardenAgeLabel(garden.createdAt ?? garden.lastOpenedAt);
   const seasonsLabel = getSeasonsLivedLabel(garden.createdAt ?? garden.lastOpenedAt);
 
+  // ── Time-aware element visibility ──────────────────────────────────────────
+  // Map useTimeOfDay → TimeSlot so we can reuse TIME_RESTRICTIONS for rendering.
+  const currentSlot: TimeSlot = timeOfDay === 'night' ? 'night'
+    : timeOfDay === 'dawn'    ? 'dawn'
+    : timeOfDay === 'evening' ? 'evening'
+    : 'day';
+
+  // Only show passive elements valid at the current hour.
+  // Fleeting elements (expiresAt) are always shown until they expire.
+  const visibleElements = garden.passiveElements.slice(-5).filter(el => {
+    if (el.expiresAt) return el.expiresAt > Date.now(); // fleeting: respect expiry
+    const allowed = TIME_RESTRICTIONS[el.type];
+    return !allowed || allowed.includes(currentSlot);
+  });
+
   // ── Puddle ─────────────────────────────────────────────────────────────────
   const hasPuddle = garden.puddle
     ? Date.now() < garden.puddle.evaporatesAt
     : false;
+
+  // Puddle creatures — appear only while the puddle is active, tappable
+  const puddleCreatures: import('@/types/garden').PassiveElement[] = hasPuddle && garden.puddle ? [
+    { type: 'frog',   id: 'puddle_frog',   addedAt: garden.puddle.formedAt, position: { x: 39, y: 93 } },
+    { type: 'turtle', id: 'puddle_turtle', addedAt: garden.puddle.formedAt, position: { x: 62, y: 91 } },
+  ] : [];
 
   // Semantic color shortcuts
   const c = {
@@ -274,7 +324,7 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway,
 
         <div className="relative flex items-end justify-center w-full" style={{ minHeight: 260 }}>
           <AnimatePresence>
-            {garden.passiveElements.slice(-5).map((el) => (
+            {[...visibleElements, ...puddleCreatures].map((el) => (
               <PassiveElementDot key={el.id} element={el} onTap={() => setActiveElement(el)} />
             ))}
           </AnimatePresence>
@@ -509,6 +559,9 @@ export default function GardenScreen({ garden, onWater, onOpenRename, hoursAway,
 }
 
 function PassiveElementDot({ element, onTap }: { element: PassiveElement; onTap: () => void }) {
+  const isFleeting = !!element.expiresAt;
+  const isAerial   = ['bird', 'butterfly', 'bat', 'snowflake', 'autumn_leaf', 'eagle', 'rainbow', 'shooting_star'].includes(element.type);
+
   return (
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
@@ -522,12 +575,27 @@ function PassiveElementDot({ element, onTap }: { element: PassiveElement; onTap:
         left: `${element.position.x}%`,
         bottom: `${100 - element.position.y}%`,
         transform: 'translate(-50%, 50%)',
-        zIndex: ['bird', 'butterfly', 'snowflake', 'autumn_leaf'].includes(element.type) ? 20 : 16,
-        // Extended transparent tap area for mobile
+        zIndex: isAerial ? 20 : 16,
         padding: '10px',
         touchAction: 'manipulation',
+        position: 'absolute',
       }}
     >
+      {/* Pulse ring for fleeting elements */}
+      {isFleeting && (
+        <motion.div
+          animate={{ scale: [1, 1.9, 1], opacity: [0.5, 0, 0.5] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute',
+            inset: '6px',
+            borderRadius: '50%',
+            background: 'rgba(255, 210, 100, 0.45)',
+            pointerEvents: 'none',
+            zIndex: -1,
+          }}
+        />
+      )}
       <span style={{ fontSize: '1.25rem', display: 'block', lineHeight: 1 }}>
         {PASSIVE_EMOJIS[element.type] ?? '🌿'}
       </span>

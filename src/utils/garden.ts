@@ -98,6 +98,33 @@ const TYPE_Y_RANGE: Record<PassiveElementType, [number, number]> = {
   tulip:       [72, 86],
   autumn_leaf: [60, 82],
   snowflake:   [35, 70],
+  bee:         [40, 70],
+  ladybug:     [65, 82],
+  ant:         [82, 92],
+  feather:     [70, 88],
+  spiderweb:   [45, 72],
+  caterpillar: [68, 82],
+  moss:        [80, 90],
+  berries:     [62, 80],
+  // Nocturnal regular
+  bat:         [25, 55],
+  beetle:      [82, 92],
+  spider:      [58, 78],
+  // Puddle creatures (positions overridden in GardenScreen — these are fallbacks)
+  frog:        [88, 95],
+  turtle:      [86, 93],
+  // Regular owl (in tree branches)
+  owl:         [36, 56],
+  // Fleeting (entries below also cover the fleeting owl when it spawns as PassiveElement)
+  rabbit:      [82, 92],
+  firefly:     [45, 80],
+  fox:         [83, 92],
+  squirrel:    [52, 78],
+  cricket:     [78, 90],
+  rainbow:       [18, 38],
+  eagle:         [12, 35],
+  shooting_star: [8,  22],
+  pawprints:     [83, 92],
 };
 
 // x: 0=left, 100=right. Trunk at 50%.
@@ -119,39 +146,82 @@ const TYPE_X_RANGE: Record<PassiveElementType, [number, number]> = {
   tulip:       [30, 70],
   autumn_leaf: [20, 80],
   snowflake:   [15, 85],
+  bee:         [20, 80],
+  ladybug:     [30, 70],
+  ant:         [38, 62],
+  feather:     [28, 72],
+  spiderweb:   [25, 75],
+  caterpillar: [32, 68],
+  moss:        [40, 60],
+  berries:     [32, 68],
+  // Nocturnal regular
+  bat:         [10, 90],
+  beetle:      [38, 62],
+  spider:      [30, 70],
+  // Puddle creatures (positions overridden in GardenScreen)
+  frog:        [36, 48],
+  turtle:      [52, 64],
+  // Fleeting
+  owl:         [32, 68],
+  rabbit:      [12, 40],
+  firefly:     [15, 85],
+  fox:         [10, 38],
+  squirrel:    [38, 62],
+  cricket:     [30, 70],
+  rainbow:     [5,  95],
+  eagle:       [5,  95],
+  shooting_star: [5,  95],
+  pawprints:     [15, 50],
 };
 
 // Seasonal pools — which types can appear each season.
 // Richer in spring/summer; sparser and moodier in autumn/winter.
 const SEASONAL_POOL: Record<SeasonKey, PassiveElementType[]> = {
   spring: ['leaf', 'flower', 'butterfly', 'bird', 'dewdrop', 'stone',
-           'tulip', 'clover', 'worm', 'snail', 'mushroom'],
+           'tulip', 'clover', 'worm', 'snail', 'mushroom',
+           'bee', 'ladybug', 'ant', 'caterpillar',
+           'bat', 'beetle'],
   summer: ['butterfly', 'bird', 'flower', 'dewdrop', 'stone', 'leaf',
-           'lizard', 'worm', 'clover'],
+           'lizard', 'worm', 'clover',
+           'bee', 'ant',
+           'bat', 'beetle'],
   autumn: ['autumn_leaf', 'mushroom', 'stone', 'bird', 'dewdrop',
-           'acorn', 'snail', 'hedgehog'],
-  winter: ['stone', 'dewdrop', 'mushroom', 'bird', 'snowflake'],
+           'acorn', 'snail', 'hedgehog',
+           'spiderweb', 'moss', 'berries', 'feather',
+           'bat', 'beetle', 'spider', 'owl'],
+  winter: ['stone', 'dewdrop', 'mushroom', 'bird', 'snowflake',
+           'spiderweb', 'moss', 'feather',
+           'bat', 'spider', 'owl'],
 };
 
 // Time-of-day slots: derived from the real clock hour.
-type TimeSlot = 'night' | 'dawn' | 'day' | 'evening';
+export type TimeSlot = 'night' | 'dawn' | 'day' | 'evening';
 
 function timeSlotNow(): TimeSlot {
   const h = new Date().getHours();
-  if (h >= 21 || h < 5)  return 'night';   // 21:00 – 04:59
+  if (h >= 22 || h < 5)  return 'night';   // 22:00 – 04:59
   if (h >= 5  && h < 8)  return 'dawn';    // 05:00 – 07:59
-  if (h >= 8  && h < 19) return 'day';     // 08:00 – 18:59
-  return 'evening';                         // 19:00 – 20:59
+  if (h >= 8  && h < 20) return 'day';     // 08:00 – 19:59
+  return 'evening';                         // 20:00 – 21:59  (Spain: real dusk)
 }
 
 // Elements restricted to specific time slots.
 // Elements NOT listed here can appear at any hour.
-const TIME_RESTRICTIONS: Partial<Record<PassiveElementType, TimeSlot[]>> = {
-  hedgehog:  ['night'],              // nocturnal — only at night
-  dewdrop:   ['dawn'],               // forms overnight, gone by mid-morning
-  butterfly: ['day'],                // needs warm light
-  bird:      ['dawn', 'day', 'evening'], // never at night
-  lizard:    ['day'],                // cold-blooded, needs full sun
+// Exported so GardenScreen can filter the visible dots by current time.
+export const TIME_RESTRICTIONS: Partial<Record<PassiveElementType, TimeSlot[]>> = {
+  hedgehog:    ['night'],                    // nocturnal — only at night
+  dewdrop:     ['dawn'],                     // forms overnight, gone by mid-morning
+  butterfly:   ['day'],                      // needs warm light
+  bird:        ['dawn', 'day', 'evening'],   // never at night
+  lizard:      ['day'],                      // cold-blooded, needs full sun
+  bee:         ['day'],                      // needs daylight to navigate
+  ladybug:     ['day'],                      // needs warmth and light
+  ant:         ['dawn', 'day', 'evening'],   // colony active, not deep night
+  caterpillar: ['day'],                      // feeds on leaves in daylight
+  bat:         ['night', 'evening'],         // emerges at dusk, hunts all night
+  beetle:      ['evening', 'night'],         // nocturnal scavenger
+  spider:      ['night'],                    // hunts at night when web is active
+  owl:         ['night', 'evening'],         // regular owl/lechuza, nocturnal
 };
 
 export function generatePassiveElements(
@@ -169,6 +239,11 @@ export function generatePassiveElements(
   // 2. Stage filter
   if (stage !== 'tree')                            pool = pool.filter(t => t !== 'acorn');
   if (!['medium','large','tree'].includes(stage))  pool = pool.filter(t => t !== 'lizard');
+  if (!['medium','large','tree'].includes(stage))  pool = pool.filter(t => t !== 'moss');
+  if (!['large','tree'].includes(stage))           pool = pool.filter(t => t !== 'berries');
+  if (!['large','tree'].includes(stage))           pool = pool.filter(t => t !== 'owl');
+  // Puddle creatures are never in the passive pool — only spawned directly in GardenScreen
+  pool = pool.filter(t => t !== 'frog' && t !== 'turtle');
 
   // 3. Time-of-day filter — only keep elements allowed at this hour
   pool = pool.filter(t => {
@@ -189,6 +264,91 @@ export function generatePassiveElements(
       position: { x: rand(xMin, xMax), y: rand(yMin, yMax) },
     };
   });
+}
+
+// ─── Fleeting elements ──────────────────────────────────────────────────────
+
+type FleetingElementType = 'owl' | 'rabbit' | 'firefly' | 'fox' | 'squirrel' | 'cricket' | 'rainbow' | 'eagle' | 'shooting_star' | 'pawprints';
+
+interface FleetingConfig {
+  /** Duration range [min, max] in milliseconds */
+  durationMs: [number, number];
+  /** Base probability per visit (0–1). Multiplied by visit bonus. */
+  probability: number;
+  seasons?: SeasonKey[];
+  timeSlots?: TimeSlot[];
+  /** Minimum total wateringCount required */
+  minWaterings?: number;
+  /** Minimum growth stage required */
+  minStage?: GrowthStage;
+}
+
+const FLEETING_CONFIGS: Record<FleetingElementType, FleetingConfig> = {
+  owl:      { durationMs: [3_600_000, 10_800_000], probability: 0.06, timeSlots: ['night'],                     minStage: 'tree' },
+  rabbit:   { durationMs: [1_200_000,  2_700_000], probability: 0.11, timeSlots: ['dawn', 'evening'],           seasons: ['spring', 'autumn'] },
+  firefly:  { durationMs: [1_800_000,  3_600_000], probability: 0.09, timeSlots: ['night'],                     seasons: ['summer'] },
+  fox:      { durationMs: [3_600_000,  7_200_000], probability: 0.04, timeSlots: ['night'],                     seasons: ['winter'], minWaterings: 100 },
+  squirrel: { durationMs: [2_700_000,  5_400_000], probability: 0.14, timeSlots: ['dawn', 'day', 'evening'],    seasons: ['autumn'], minStage: 'large' },
+  cricket:  { durationMs: [7_200_000, 14_400_000], probability: 0.13, timeSlots: ['evening', 'night'],          seasons: ['summer', 'spring'] },
+  rainbow:  { durationMs: [900_000,   1_800_000],  probability: 0.05, timeSlots: ['day'] },
+  eagle:          { durationMs: [300_000,    900_000],   probability: 0.03, timeSlots: ['day'],   minWaterings: 200 },
+  shooting_star:  { durationMs: [300_000,    600_000],   probability: 0.03, timeSlots: ['night'] },
+  pawprints:      { durationMs: [1_800_000, 3_600_000],  probability: 0.10, timeSlots: ['dawn'] },
+};
+
+const STAGE_ORDER_INDEX: Record<GrowthStage, number> = {
+  seed: 0, sprout: 1, small: 2, medium: 3, large: 4, tree: 5,
+};
+
+/** Roll for one fleeting element based on current conditions. Returns null if no spawn. */
+function trySpawnFleeting(
+  visitCount: number,
+  stage: GrowthStage,
+  wateringCount: number,
+): PassiveElement | null {
+  const season = seasonKeyAt(Date.now());
+  const slot   = timeSlotNow();
+  const stageIdx = STAGE_ORDER_INDEX[stage];
+
+  // Visit-count multiplier: more visits → higher chance
+  const visitMult = visitCount <= 1 ? 1.0
+    : visitCount === 2 ? 1.35
+    : visitCount === 3 ? 1.70
+    : 2.10;
+
+  // Collect eligible types
+  const eligible: FleetingElementType[] = (Object.keys(FLEETING_CONFIGS) as FleetingElementType[])
+    .filter(type => {
+      const cfg = FLEETING_CONFIGS[type];
+      if (cfg.seasons && !cfg.seasons.includes(season)) return false;
+      if (cfg.timeSlots && !cfg.timeSlots.includes(slot))  return false;
+      if (cfg.minWaterings && wateringCount < cfg.minWaterings) return false;
+      if (cfg.minStage && stageIdx < STAGE_ORDER_INDEX[cfg.minStage]) return false;
+      return true;
+    });
+
+  if (eligible.length === 0) return null;
+
+  // Roll each eligible type independently
+  for (const type of eligible) {
+    const cfg = FLEETING_CONFIGS[type];
+    const p   = Math.min(cfg.probability * visitMult, 0.85);
+    if (Math.random() < p) {
+      const [dMin, dMax] = cfg.durationMs;
+      const duration     = dMin + Math.random() * (dMax - dMin);
+      const now          = Date.now();
+      const [yMin, yMax] = TYPE_Y_RANGE[type];
+      const [xMin, xMax] = TYPE_X_RANGE[type];
+      return {
+        type,
+        id: `ft_${now}`,
+        addedAt: now,
+        expiresAt: now + duration,
+        position: { x: rand(xMin, xMax), y: rand(yMin, yMax) },
+      };
+    }
+  }
+  return null;
 }
 
 // ─── Garden age ─────────────────────────────────────────────────────────────
@@ -413,18 +573,49 @@ export function processReturn(state: GardenState): {
   updatedState: GardenState;
   hoursAway: number;
 } {
-  const now    = Date.now();
-  const today  = Math.floor(now / 86_400_000);
+  const now       = Date.now();
+  const today     = Math.floor(now / 86_400_000);
   const hoursAway = (now - state.lastOpenedAt) / 3_600_000;
 
-  const newElements  = generatePassiveElements(hoursAway, state.stage);
-  const allElements  = [...state.passiveElements, ...newElements].slice(-8);
+  // ── 1. New passive elements (time-based) ────────────────────────────────────
+  const newElements = generatePassiveElements(hoursAway, state.stage);
 
-  // Evaporate puddle if time has passed
+  // ── 2. Purge expired fleeting elements ──────────────────────────────────────
+  const prevElements    = (state.passiveElements ?? []).filter(
+    e => !e.expiresAt || e.expiresAt > now,
+  );
+
+  // ── 3. Merge regular elements (cap at 8, preserve fleeting) ─────────────────
+  // Also purge regular elements that are no longer valid at the current hour
+  // (e.g. bat spawned at night, user opens at morning → remove from state entirely)
+  const slot = timeSlotNow();
+  const prevRegular = prevElements.filter(e => {
+    if (e.expiresAt) return false;                        // fleeting — handled separately
+    const allowed = TIME_RESTRICTIONS[e.type];
+    return !allowed || allowed.includes(slot);            // purge if out of valid hours
+  });
+  const prevFleeting = prevElements.filter(e => !!e.expiresAt);
+  const allRegular   = [...prevRegular, ...newElements].slice(-8);
+
+  // ── 4. Visit count (resets each calendar day) ────────────────────────────────
+  const lastOpenDay  = Math.floor(state.lastOpenedAt / 86_400_000);
+  const isFirstToday = lastOpenDay < today;
+  const visitCount   = isFirstToday ? 1 : ((state.dailyVisitCount ?? 0) + 1);
+
+  // ── 5. Fleeting spawn — max 2 fleeting at once ───────────────────────────────
+  const allFleeting = [...prevFleeting];
+  if (allFleeting.length < 2) {
+    const spawned = trySpawnFleeting(visitCount, state.stage, state.wateringCount);
+    if (spawned) allFleeting.push(spawned);
+  }
+
+  const allElements = [...allRegular, ...allFleeting];
+
+  // ── 6. Evaporate puddle if time has passed ──────────────────────────────────
   let puddle = state.puddle;
   if (puddle && now > puddle.evaporatesAt) puddle = undefined;
 
-  // Reset daily count on new day
+  // ── 7. Reset daily watering count on new day ────────────────────────────────
   const isNewDay           = (state.lastWateringDay ?? 0) < today;
   const dailyWateringCount = isNewDay ? 0 : (state.dailyWateringCount ?? 0);
   const lastWateringDay    = isNewDay ? today : (state.lastWateringDay ?? today);
@@ -438,6 +629,7 @@ export function processReturn(state: GardenState): {
       puddle,
       dailyWateringCount,
       lastWateringDay,
+      dailyVisitCount:     visitCount,
     },
     hoursAway,
   };

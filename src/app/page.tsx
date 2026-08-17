@@ -215,6 +215,7 @@ export default function App() {
             stage={garden.stage}
             maturity={getTreeMaturity(garden.wateringCount)}
             onClose={handleCloseEcosystem}
+            passiveElements={garden.passiveElements}
           />
         )}
       </AnimatePresence>

@@ -10,13 +10,29 @@ export type PassiveElementType =
   // Stage-gated
   | 'acorn'
   // Seasonal atmosphere
-  | 'tulip'      | 'autumn_leaf' | 'snowflake';
+  | 'tulip'      | 'autumn_leaf' | 'snowflake'
+  // Spring / summer insects
+  | 'bee'        | 'ladybug'    | 'ant'        | 'caterpillar'
+  // Autumn / winter atmosphere
+  | 'spiderweb'  | 'moss'       | 'berries'
+  // Any season
+  | 'feather'
+  // Nocturnal regular
+  | 'bat'        | 'beetle'     | 'spider'
+  // Puddle creatures — appear only when puddle is active
+  | 'frog'       | 'turtle'
+  // ── Fleeting — appear for minutes/hours, then vanish ──────────────────────
+  | 'owl'        | 'rabbit'     | 'firefly'    | 'fox'
+  | 'squirrel'   | 'cricket'    | 'rainbow'    | 'eagle'
+  | 'shooting_star' | 'pawprints';
 
 export interface PassiveElement {
   type: PassiveElementType;
   id: string;
   addedAt: number;
   position: { x: number; y: number };
+  /** If set, this is a fleeting element — it disappears at this timestamp. */
+  expiresAt?: number;
 }
 
 export type TreeMaturity = 'young' | 'adult' | 'mature' | 'old' | 'centenarian';
@@ -55,6 +71,8 @@ export interface GardenState {
   lastWateringDay: number;
   /** Puddle that forms after the 5th watering of the day */
   puddle?: Puddle;
+  /** How many times the app has been opened today. Resets each calendar day. */
+  dailyVisitCount?: number;
 }
 
 export const STAGE_LABELS: Record<GrowthStage, string> = {
